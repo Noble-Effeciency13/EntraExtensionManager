@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <!--
+      Content Security Policy. Fluent UI v9 uses runtime-injected <style> tags
+      via Griffel, so 'unsafe-inline' is required for style-src. MSAL uses
+      cryptographic operations and form-posts to login.microsoftonline.com.
+      Microsoft Graph requests target graph.microsoft.com.
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://raw.githubusercontent.com; font-src 'self' data:; connect-src 'self' https://login.microsoftonline.com https://login.windows.net https://login.live.com https://graph.microsoft.com; frame-src https://login.microsoftonline.com https://login.windows.net; form-action 'self' https://login.microsoftonline.com; base-uri 'self'; object-src 'none';"
+    />
+    <script src="/config.js"></script>
+    <title>Entra Extensions Manager</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

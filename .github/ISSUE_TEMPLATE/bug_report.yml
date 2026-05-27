@@ -1,0 +1,73 @@
+name: Bug report
+description: Report something that is broken or behaving unexpectedly.
+title: "Bug: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. Do not include access tokens, client secrets, or unsanitized tenant/user data.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What went wrong?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: List the exact steps that trigger the problem.
+      placeholder: |
+        1. Sign in as ...
+        2. Open ...
+        3. Click ...
+        4. See ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: dropdown
+    id: mode
+    attributes:
+      label: App mode
+      options:
+        - Read mode
+        - Edit mode
+        - Both
+        - Not sure
+    validations:
+      required: true
+  - type: input
+    id: browser
+    attributes:
+      label: Browser
+      placeholder: Edge 125, Chrome 125, Firefox 126, etc.
+    validations:
+      required: true
+  - type: input
+    id: deployment
+    attributes:
+      label: Deployment
+      placeholder: Local dev, Azure Static Web Apps production, custom domain, etc.
+  - type: textarea
+    id: graph
+    attributes:
+      label: Sanitized Graph details
+      description: Include sanitized error code/message, request-id, timestamp, and API area if available. Do not include tokens.
+  - type: textarea
+    id: logs
+    attributes:
+      label: Additional context
+      description: Screenshots, sanitized console messages, or other helpful context.

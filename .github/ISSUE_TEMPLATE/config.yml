@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Microsoft Graph documentation
+    url: https://learn.microsoft.com/graph/
+    about: Reference documentation for Microsoft Graph APIs and permissions.
+  - name: Azure Static Web Apps documentation
+    url: https://learn.microsoft.com/azure/static-web-apps/
+    about: Hosting and deployment documentation for Azure Static Web Apps.

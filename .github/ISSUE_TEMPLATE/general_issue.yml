@@ -1,0 +1,36 @@
+name: General issue
+description: Ask a question or report an issue that is not clearly a bug or feature request.
+title: "Issue: "
+labels: [question]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please avoid sharing access tokens, client secrets, or unsanitized tenant/user data.
+  - type: textarea
+    id: issue
+    attributes:
+      label: What do you need help with?
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Local setup
+        - Azure Static Web Apps deployment
+        - Entra app registration
+        - Microsoft Graph permissions
+        - Schema extensions
+        - Directory extensions
+        - Usage monitor
+        - Audit logs
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Include sanitized errors, request IDs, timestamps, browser, and deployment type where relevant.

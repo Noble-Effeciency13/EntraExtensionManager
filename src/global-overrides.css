@@ -1,0 +1,12 @@
+/* Global style overrides that need !important to beat Fluent UI v9
+ * defaults applied via Griffel inline styles. Keep this file tiny. */
+
+/* App picker dropdown: pin a compact max-height so the popover stays small
+ * regardless of how many options are rendered. Fluent's Combobox/Listbox
+ * positioning sets an inline max-height based on viewport space, which
+ * outranks slot styles — !important is the only reliable override. */
+.eem-app-picker-listbox {
+  max-height: 320px !important;
+  max-width: 520px !important;
+  overflow-y: auto !important;
+}
