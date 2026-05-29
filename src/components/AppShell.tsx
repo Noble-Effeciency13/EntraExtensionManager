@@ -45,15 +45,17 @@ import { useGlobalKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 
 const useStyles = makeStyles({
   root: {
-    minHeight: '100vh',
+    height: '100vh',
+    maxHeight: '100vh',
     display: 'grid',
     gridTemplateColumns: '260px minmax(0, 1fr)',
-    gridTemplateRows: '56px 1fr',
+    gridTemplateRows: '56px minmax(0, 1fr)',
     gridTemplateAreas: `
       'topbar topbar'
       'nav    main'
     `,
     backgroundColor: tokens.colorNeutralBackground2,
+    overflow: 'hidden',
   },
   topbar: {
     gridArea: 'topbar',
@@ -99,12 +101,14 @@ const useStyles = makeStyles({
   },
   nav: {
     gridArea: 'nav',
+    minHeight: 0,
     padding: '16px 12px',
     display: 'flex',
     flexDirection: 'column',
     gap: '4px',
     backgroundColor: tokens.colorNeutralBackground1,
     borderRight: `1px solid ${tokens.colorNeutralStroke2}`,
+    overflowY: 'auto',
   },
   navLink: {
     display: 'flex',
@@ -147,6 +151,7 @@ const useStyles = makeStyles({
   },
   main: {
     gridArea: 'main',
+    minHeight: 0,
     overflow: 'auto',
     padding: '28px 32px',
     minWidth: 0,
