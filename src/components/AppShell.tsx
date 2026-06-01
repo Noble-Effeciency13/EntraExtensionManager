@@ -42,6 +42,7 @@ import { useAppToast } from '@/hooks/useAppToast';
 import { AboutDialog } from '@/components/AboutDialog';
 import { BrandLogo } from '@/components/BrandLogo';
 import { useGlobalKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
+import { TenantSwitcher } from '@/components/TenantSwitcher';
 
 const useStyles = makeStyles({
   root: {
@@ -258,6 +259,7 @@ export function AppShell({ children, theme, onToggleTheme }: AppShellProps) {
           )}
         </div>
         <div className={styles.topbarRight}>
+          <TenantSwitcher />
           <div className={styles.modeGroup} role="group" aria-label="Access mode">
             <Tooltip content="Read mode — no write actions" relationship="label">
               <ToggleButton

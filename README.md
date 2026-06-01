@@ -19,6 +19,7 @@ The portal is designed for administrators and identity engineers who need a safe
     - [Tools](#tools)
 - [Architecture](#architecture)
 - [Authentication model](#authentication-model)
+    - [Tenant switcher](#tenant-switcher)
 - [Data handling and privacy](#data-handling-and-privacy)
 - [Permissions and roles](#permissions-and-roles)
     - [Delegated Graph permissions](#delegated-graph-permissions)
@@ -91,6 +92,17 @@ There is no application-owned runtime service that receives, proxies, stores, or
 - Edit mode requests elevated delegated Graph permissions only when the user switches into edit mode.
 - Conditional Access, tenant consent policies, MFA requirements, and user assignment policies continue to apply.
 - The portal does not use client secrets or application permissions.
+- The portal authenticates against the Microsoft Entra `organizations` endpoint, allowing users from any Azure AD tenant to sign in.
+
+### Tenant switcher
+
+The header includes a **Tenant switcher** button that allows the signed-in user to work across multiple Azure AD tenants without signing out.
+
+- On sign-in, the portal silently fetches all tenant memberships for the signed-in user using the Azure Management API (`management.azure.com/tenants`). This requires the `https://management.azure.com/user_impersonation` delegated scope — the first time this is used, a one-time consent prompt appears when the user opens the switcher.
+- The list of tenants is ready before the switcher is opened. If the management scope has not yet been consented, the switcher offers a **Grant access to list tenants** option that triggers the consent popup on demand (browser popup-blocker safe).
+- **Switching to a previously visited tenant** sets the cached MSAL account as active immediately — no popup or re-authentication required.
+- **Switching to a new tenant** opens a Microsoft Entra login popup for that tenant. If the app has not yet been granted access there, the standard Entra consent screen is shown for that tenant only.
+- All Microsoft Graph API calls automatically target the active tenant after a switch.
 
 ## Data handling and privacy
 
@@ -178,8 +190,9 @@ GitHub's automatically generated **Source code** ZIP/TAR downloads are not count
 | Configuration | Purpose |
 | --- | --- |
 | `aadClientId` | Application/client ID from your Entra app registration. |
-| `aadTenantId` | `organizations`, `common`, or a specific tenant ID. |
 | `aadRedirectUri` | HTTPS URL where your self-hosted portal is served. If omitted, the browser origin is used. |
+
+> **Note:** `aadTenantId` is no longer used by the portal. Authentication always targets the `organizations` endpoint so users from any Azure AD tenant can sign in. The multi-tenant tenant switcher handles per-tenant context at runtime.
 
 The release package includes a `config.js` file for these values. It can be changed after build time, so self-hosters do not need to rebuild the app just to use their own Entra app registration.
 
@@ -190,8 +203,9 @@ Self-hosters who prefer to build from source can set the equivalent Vite build-t
 | Build variable | Purpose |
 | --- | --- |
 | `VITE_AAD_CLIENT_ID` | Application/client ID from your Entra app registration. |
-| `VITE_AAD_TENANT_ID` | `organizations`, `common`, or a specific tenant ID. |
 | `VITE_AAD_REDIRECT_URI` | HTTPS URL where your self-hosted portal is served. |
+
+> **Note:** `VITE_AAD_TENANT_ID` is no longer used. Authentication always targets the `organizations` endpoint.
 
 The app builds to static files and can be hosted on static hosting platforms such as Azure Static Web Apps, Azure Storage static websites, GitHub Pages, or equivalent services. For production use, host it over HTTPS and register the exact HTTPS URL as a SPA redirect URI in Entra ID.
 

@@ -16,17 +16,25 @@ const runtimeClientId = usableRuntimeValue(runtimeConfig?.aadClientId);
 const useRuntimeConfig = Boolean(runtimeClientId);
 
 const clientId = runtimeClientId ?? import.meta.env.VITE_AAD_CLIENT_ID ?? '';
-const tenantId = useRuntimeConfig
-  ? usableRuntimeValue(runtimeConfig?.aadTenantId) || 'organizations'
-  : import.meta.env.VITE_AAD_TENANT_ID || 'common';
 const redirectUri = useRuntimeConfig
   ? usableRuntimeValue(runtimeConfig?.aadRedirectUri) || window.location.origin
   : import.meta.env.VITE_AAD_REDIRECT_URI || window.location.origin;
 
+/**
+ * Builds a tenant-specific authority URL for per-request token acquisition.
+ * Used in token requests after sign-in to scope tokens to the correct tenant.
+ */
+export function buildTenantAuthority(tenantId: string): string {
+  return `https://login.microsoftonline.com/${tenantId}`;
+}
+
 export const msalConfig: Configuration = {
   auth: {
     clientId,
-    authority: `https://login.microsoftonline.com/${tenantId}`,
+    // Always use the multi-tenant 'organizations' endpoint so users from any
+    // Azure AD tenant can sign in. Tenant-specific token acquisition happens
+    // at request time via buildTenantAuthority().
+    authority: 'https://login.microsoftonline.com/organizations',
     redirectUri,
     postLogoutRedirectUri: redirectUri,
     navigateToLoginRequestUrl: true,

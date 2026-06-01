@@ -8,7 +8,7 @@ import {
   useState,
 } from 'react';
 import { useMsal } from '@azure/msal-react';
-import { editScopes, readScopes } from './msalConfig';
+import { buildTenantAuthority, editScopes, readScopes } from './msalConfig';
 
 export type Mode = 'read' | 'edit';
 
@@ -60,6 +60,7 @@ export function ModeProvider({ children }: { children: ReactNode }) {
             scopes: editScopes,
             account,
             prompt: 'login',
+            authority: buildTenantAuthority(account.tenantId),
           });
           setModeState('edit');
           return true;
