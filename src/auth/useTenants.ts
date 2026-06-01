@@ -24,11 +24,11 @@ export interface UseTenants {
   hasFetched: boolean;
   /**
    * True when silent token acquisition failed because the management scope
-   * hasn't been consented yet. Call fetchTenants() from a click handler to
+   * hasn't been consented yet. Call fetchTenants(true) from a click handler to
    * trigger the interactive consent popup (browser requires user gesture).
    */
   needsConsent: boolean;
-  fetchTenants: () => Promise<void>;
+  fetchTenants: (allowInteraction?: boolean) => Promise<void>;
 }
 
 /**
