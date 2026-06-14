@@ -8,7 +8,7 @@
 
 Entra Extensions Manager is a managed, browser-based portal for discovering, reviewing, and managing Microsoft Entra ID extension definitions through Microsoft Graph.
 
-The portal is designed for administrators and identity engineers who need a safer, clearer way to work with **schema extensions** and **directory extensions** without building one-off Graph scripts for every task.
+The portal is designed for administrators and identity engineers who need a safer, clearer way to work with **schema extensions**, **directory extensions**, and **open extensions** without building one-off Graph scripts for every task.
 
 ## Table of contents
 
@@ -16,6 +16,7 @@ The portal is designed for administrators and identity engineers who need a safe
     - [Extension inventory](#extension-inventory)
     - [Schema extension management](#schema-extension-management)
     - [Directory extension management](#directory-extension-management)
+    - [Open extension management](#open-extension-management)
     - [Tools](#tools)
 - [Architecture](#architecture)
 - [Authentication model](#authentication-model)
@@ -25,9 +26,11 @@ The portal is designed for administrators and identity engineers who need a safe
     - [Delegated Graph permissions](#delegated-graph-permissions)
     - [Suggested Microsoft Entra roles](#suggested-microsoft-entra-roles)
 - [Self-hosting](#self-hosting)
+    - [Microsoft Entra app registration](#microsoft-entra-app-registration)
     - [Downloadable release package](#downloadable-release-package)
     - [Runtime configuration](#runtime-configuration)
     - [Building from source](#building-from-source)
+    - [Hosting and routing](#hosting-and-routing)
 - [Security boundaries](#security-boundaries)
 - [Microsoft Graph behavior to be aware of](#microsoft-graph-behavior-to-be-aware-of)
 - [Support-safe diagnostics](#support-safe-diagnostics)
@@ -39,6 +42,7 @@ The portal is designed for administrators and identity engineers who need a safe
 - Lists schema extensions and directory extensions in a single experience.
 - Shows extension type, target object types, owner/application context, status, data type, and properties.
 - Provides filtering, searching, and expandable details for investigation and documentation.
+- Surfaces open extensions separately, on a per-object basis, since they are not registered tenant-wide.
 
 ### Schema extension management
 
@@ -55,9 +59,16 @@ The portal is designed for administrators and identity engineers who need a safe
 - Deletes directory extension definitions where Microsoft Graph allows deletion.
 - Identifies read-only or synced-from-on-premises extension definitions.
 
+### Open extension management
+
+- Manages **open extensions** (`openTypeExtension`) on Users, Groups, Devices, and the Organization object.
+- Because open extensions are stored on individual objects rather than registered tenant-wide, the area is object-scoped: you select a resource type and an object to work with the open extensions held on it.
+- Finds objects with a **type-ahead directory search** — start typing a name, user principal name, or mail and matching users, groups, or devices appear as you go. A pasted object id or UPN can also be looked up directly. The Organization object loads automatically.
+- Shows each open extension's stored data, and (in edit mode) creates, edits, and deletes open extensions. The create dialog presents a clearly marked example JSON object to illustrate the expected shape.
+
 ### Tools
 
-- **Usage monitor** — probes supported directory object types to estimate where extension values are present.
+- **Usage monitor** — probes supported directory object types to estimate where extension values are present, and lets you expand any extension to drill into the actual objects that hold a value and the data stored. The object list is masked by default with a reveal toggle, pages on demand, and can be exported to CSV or JSON.
 - **Validate value** — tests whether proposed extension values match the extension definition and target object behavior.
 - **Manifest snippet** — generates app manifest snippets for extension definitions.
 - **Audit log** — helps find extension-related directory audit events.
@@ -138,10 +149,14 @@ Actual access is determined by both:
 | --- | --- |
 | Sign-in | `User.Read` |
 | Extension inventory and read-only tools | `Application.Read.All`, `Directory.Read.All` |
+| Open extension lookup and directory object search | `Directory.Read.All` |
 | Audit log tool | `AuditLog.Read.All` |
 | Schema and directory extension changes | `Application.ReadWrite.All`, `Directory.ReadWrite.All` |
+| Open extension changes | `Directory.ReadWrite.All` |
 
 Admin consent is typically required for the directory-wide permissions.
+
+The **tenant switcher** additionally uses the **Azure Service Management** delegated permission `user_impersonation` (`https://management.azure.com/user_impersonation`) to enumerate the signed-in user's tenant memberships. This is not a Microsoft Graph permission; consent is requested on demand the first time the switcher is used.
 
 ### Suggested Microsoft Entra roles
 
@@ -169,7 +184,20 @@ Self-hosting keeps the same browser-only security model:
 - Microsoft Graph calls still use delegated permissions for the signed-in user.
 - Tenant data is still fetched directly from Microsoft Graph and is not persisted by the app.
 
-Self-hosting requires your own Microsoft Entra app registration configured as a **Single-page application**. The redirect URI must match the URL where you host the app.
+### Microsoft Entra app registration
+
+Self-hosting requires your own Microsoft Entra app registration.
+
+1. Go to **Microsoft Entra admin center → App registrations → New registration**.
+2. **Supported account types:**
+   - Choose **Accounts in any organizational directory (multitenant)** for the full cross-tenant experience, so the tenant switcher can add other tenants.
+   - Choose **single tenant** if only users from your own tenant should ever sign in.
+3. Under **Authentication → Add a platform → Single-page application (SPA)**, add your hosted URL as a **Redirect URI** (for example `https://extensions.contoso.com`). It must match the app's origin exactly. Do **not** use the "Web" platform and do **not** create a client secret — the portal uses the authorization code flow with PKCE.
+4. Under **API permissions → Add a permission**, add these **delegated** permissions:
+   - **Microsoft Graph:** `User.Read`, `Application.Read.All`, `Directory.Read.All`, `AuditLog.Read.All`, `Application.ReadWrite.All`, `Directory.ReadWrite.All`.
+   - **Azure Service Management:** `user_impersonation` — required by the tenant switcher, which calls `management.azure.com/tenants`. Omit only if you do not need cross-tenant switching.
+5. Grant **admin consent** for the directory-wide permissions to avoid per-user consent prompts.
+6. Copy the **Application (client) ID** — you will place it in `config.js` (release package) or `VITE_AAD_CLIENT_ID` (source build).
 
 ### Downloadable release package
 
@@ -183,18 +211,28 @@ To self-host from a release package:
 4. Upload the extracted files to your static web host.
 5. Register the final hosted URL as a SPA redirect URI in your Entra app registration.
 
+> **Important:** you must edit `config.js`. If the `aadClientId` placeholder is left unchanged, a release build has no build-time fallback and sign-in fails with `AADSTS900144: The request body must contain the following parameter: 'client_id'`.
+
 GitHub's automatically generated **Source code** ZIP/TAR downloads are not counted by the release downloads badge. The badge counts uploaded release assets, such as the self-hostable ZIP package.
 
 ### Runtime configuration
 
+The release package includes a `config.js` file that is read at runtime, so you can change it after build time without rebuilding:
+
+```js
+window.__EEM_CONFIG__ = {
+  aadClientId: 'your-application-client-id',
+  aadTenantId: '__VITE_AAD_TENANT_ID__', // present for compatibility; ignored
+  aadRedirectUri: 'https://extensions.contoso.com',
+};
+```
+
 | Configuration | Purpose |
 | --- | --- |
-| `aadClientId` | Application/client ID from your Entra app registration. |
-| `aadRedirectUri` | HTTPS URL where your self-hosted portal is served. If omitted, the browser origin is used. |
+| `aadClientId` | Application/client ID from your Entra app registration. Required. |
+| `aadRedirectUri` | HTTPS URL where your self-hosted portal is served. If omitted, the browser origin is used. Must match a registered SPA redirect URI. |
 
-> **Note:** `aadTenantId` is no longer used by the portal. Authentication always targets the `organizations` endpoint so users from any Azure AD tenant can sign in. The multi-tenant tenant switcher handles per-tenant context at runtime.
-
-The release package includes a `config.js` file for these values. It can be changed after build time, so self-hosters do not need to rebuild the app just to use their own Entra app registration.
+> **Note:** `aadTenantId` remains in the file for backward compatibility but is ignored. Authentication always targets the `organizations` endpoint so users from any Azure AD tenant can sign in. The tenant switcher handles per-tenant context at runtime. Any value still left in the build placeholder form (wrapped in leading and trailing double underscores, such as `__VITE_AAD_CLIENT_ID__`) is treated as unset.
 
 ### Building from source
 
@@ -207,9 +245,16 @@ Self-hosters who prefer to build from source can set the equivalent Vite build-t
 
 > **Note:** `VITE_AAD_TENANT_ID` is no longer used. Authentication always targets the `organizations` endpoint.
 
-The app builds to static files and can be hosted on static hosting platforms such as Azure Static Web Apps, Azure Storage static websites, GitHub Pages, or equivalent services. For production use, host it over HTTPS and register the exact HTTPS URL as a SPA redirect URI in Entra ID.
+Copy `.env.example` to `.env.local`, set the values, then run `npm ci` and `npm run build`. The build output in `dist/` is the self-hostable static site.
 
-The release package assumes the portal is hosted at the root of an HTTPS origin, such as `https://extensions.contoso.com/`, with unknown routes falling back to `index.html`. Azure Static Web Apps uses the included `staticwebapp.config.json` for that fallback behavior.
+### Hosting and routing
+
+The app is a single-page application, so the host must serve `index.html` for unknown routes.
+
+- **Azure Static Web Apps:** the included `staticwebapp.config.json` provides the `index.html` navigation fallback and a baseline set of security headers (`X-Content-Type-Options`, `Referrer-Policy`, `X-Frame-Options`, `Permissions-Policy`). No extra configuration is needed.
+- **Other hosts (nginx, Azure Storage static websites, Amazon S3/CloudFront, GitHub Pages, etc.):** `staticwebapp.config.json` is ignored. Configure your host to fall back to `/index.html` for unmatched routes, serve everything over HTTPS, and — if you want the same hardening — replicate the security headers from `staticwebapp.config.json`.
+
+The release package assumes the portal is hosted at the root of an HTTPS origin, such as `https://extensions.contoso.com/`. For production use, host over HTTPS and register the exact HTTPS origin as a SPA redirect URI in Entra ID.
 
 ## Security boundaries
 
@@ -226,6 +271,9 @@ The release package assumes the portal is hosted at the root of an HTTPS origin,
 - Directory extensions are created and deleted through an application's `extensionProperties` collection.
 - Microsoft Graph does not support PATCH updates for directory extension definitions. Replacing one requires delete/recreate behavior and may affect existing values.
 - Some usage checks rely on Microsoft Graph `$count` and advanced query support. Unsupported target types are skipped by design.
+- The Usage monitor object drill-down lists objects with the same advanced-query support (`$filter ... ne null` with `$count` and `ConsistencyLevel: eventual`) and pages results on demand; target types that do not support it are not offered.
+- Open extensions are stored per object and are not enumerable tenant-wide — there is no Graph endpoint that lists every open extension in a tenant — so the portal works with them one object at a time rather than as a global inventory.
+- Directory object search uses Microsoft Graph `$search` with `ConsistencyLevel: eventual`, is debounced, and requires at least two characters to limit request volume.
 
 ## Support-safe diagnostics
 

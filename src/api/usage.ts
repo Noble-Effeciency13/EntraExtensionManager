@@ -10,12 +10,42 @@ import type { DirectoryExtensionProperty, SchemaExtension } from '@/types/extens
  * "Raw count (/$count) is not supported because it is used with the unsupported
  * entity 'Organization'".
  */
-const SUPPORTED_COLLECTIONS: Record<string, string> = {
+export const SUPPORTED_COLLECTIONS: Record<string, string> = {
   User: '/users',
   Group: '/groups',
   Device: '/devices',
   Application: '/applications',
   AdministrativeUnit: '/directory/administrativeUnits',
+};
+
+/**
+ * Per-collection identity columns selected when listing the actual objects
+ * behind a usage count. `identifier` extracts a secondary id (UPN/appId/…)
+ * from a raw Graph object for display in the drill-down.
+ */
+export const COLLECTION_IDENTITY: Record<
+  string,
+  { select: string[]; identifier?: (raw: Record<string, unknown>) => string | undefined }
+> = {
+  User: {
+    select: ['id', 'displayName', 'userPrincipalName'],
+    identifier: (o) => o.userPrincipalName as string | undefined,
+  },
+  Group: {
+    select: ['id', 'displayName', 'mailNickname'],
+    identifier: (o) => o.mailNickname as string | undefined,
+  },
+  Device: {
+    select: ['id', 'displayName', 'deviceId'],
+    identifier: (o) => o.deviceId as string | undefined,
+  },
+  Application: {
+    select: ['id', 'displayName', 'appId'],
+    identifier: (o) => o.appId as string | undefined,
+  },
+  AdministrativeUnit: {
+    select: ['id', 'displayName'],
+  },
 };
 
 export interface UsageRow {

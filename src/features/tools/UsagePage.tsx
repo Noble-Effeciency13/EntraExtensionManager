@@ -18,6 +18,7 @@ import {
   OverviewExtension,
 } from '@/components/ExtensionsOverview';
 import { UsageDialog } from '@/components/UsageDialog';
+import { UsageObjectsDrilldown } from '@/features/tools/UsageObjectsDrilldown';
 import {
   ChartCard,
   Donut,
@@ -207,7 +208,7 @@ export function UsagePage() {
 
       <div className={styles.panel}>
         <ExtensionsOverview
-          description="Per-extension drill-down. Use a row's Probe button for a single-extension usage report."
+          description="Per-extension drill-down. Expand a row to list the actual objects that hold a value and the data stored, or use Probe for a quick per-target count."
           renderActions={(src) => (
             <Button
               size="small"
@@ -217,6 +218,7 @@ export function UsagePage() {
               Probe
             </Button>
           )}
+          renderExpansion={(src) => <UsageObjectsDrilldown source={src} />}
         />
       </div>
 

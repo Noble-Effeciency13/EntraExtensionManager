@@ -36,10 +36,12 @@ import {
   DataUsage24Regular,
   Beaker24Regular,
   ClipboardCode24Regular,
+  Code24Regular,
 } from '@fluentui/react-icons';
 import { useMode } from '@/auth/mode';
 import { useAppToast } from '@/hooks/useAppToast';
 import { AboutDialog } from '@/components/AboutDialog';
+import { AppFooter } from '@/components/AppFooter';
 import { BrandLogo } from '@/components/BrandLogo';
 import { useGlobalKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { TenantSwitcher } from '@/components/TenantSwitcher';
@@ -50,10 +52,11 @@ const useStyles = makeStyles({
     maxHeight: '100vh',
     display: 'grid',
     gridTemplateColumns: '260px minmax(0, 1fr)',
-    gridTemplateRows: '56px minmax(0, 1fr)',
+    gridTemplateRows: '56px minmax(0, 1fr) auto',
     gridTemplateAreas: `
       'topbar topbar'
       'nav    main'
+      'footer footer'
     `,
     backgroundColor: tokens.colorNeutralBackground2,
     overflow: 'hidden',
@@ -176,6 +179,7 @@ const navItems: NavItem[] = [
     label: 'Directory extensions',
     icon: <ExtendedDock24Regular />,
   },
+  { to: '/open-extensions', label: 'Open extensions', icon: <Code24Regular /> },
 ];
 
 const toolNavItems: NavItem[] = [
@@ -443,6 +447,7 @@ export function AppShell({ children, theme, onToggleTheme }: AppShellProps) {
       </nav>
 
       <main className={styles.main}>{children}</main>
+      <AppFooter />
       <AboutDialog open={aboutOpen} onOpenChange={setAboutOpen} />
     </div>
   );

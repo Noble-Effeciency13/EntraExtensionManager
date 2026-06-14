@@ -74,6 +74,11 @@ const useStyles = makeStyles({
     flexDirection: 'column',
     gap: '6px',
   },
+  expansionSlot: {
+    marginTop: '8px',
+    paddingTop: '10px',
+    borderTop: `1px solid ${tokens.colorNeutralStroke2}`,
+  },
   monoId: {
     fontFamily: tokens.fontFamilyMonospace,
     fontSize: tokens.fontSizeBase200,
@@ -100,6 +105,12 @@ interface Props {
   renderActions: (row: OverviewExtension) => ReactNode;
   /** Restrict to one kind. */
   kindFilter?: 'schema' | 'directory';
+  /**
+   * Optional extra content rendered inside a row's expanded panel, below the
+   * default property/target details. Used by the Usage monitor to surface the
+   * object-level drill-down.
+   */
+  renderExpansion?: (row: OverviewExtension) => ReactNode;
 }
 
 /**
@@ -111,6 +122,7 @@ export function ExtensionsOverview({
   description,
   renderActions,
   kindFilter,
+  renderExpansion,
 }: Props) {
   const styles = useStyles();
   const [query, setQuery] = useState('');
@@ -450,6 +462,11 @@ export function ExtensionsOverview({
                               </span>
                             </Caption1>
                           </>
+                        )}
+                        {renderExpansion && (
+                          <div className={styles.expansionSlot}>
+                            {renderExpansion(r.source)}
+                          </div>
                         )}
                       </div>
                     </TableCell>

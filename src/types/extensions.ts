@@ -113,3 +113,59 @@ export interface AppRegistration {
   appId: string;
   displayName: string;
 }
+
+// ---------- Usage object drill-down ----------
+
+/**
+ * A single directory object that carries a non-null value for a schema or
+ * directory extension, surfaced by the Usage monitor drill-down.
+ */
+export interface ExtensionObjectRow {
+  /** Directory object id. */
+  id: string;
+  /** Best-effort display name for the object. */
+  displayName: string;
+  /** Secondary identifier (UPN / appId / deviceId) when available. */
+  identifier?: string;
+  /**
+   * Per-property values held by this object for the extension. For schema
+   * extensions this is the full complex value (one entry per property); for
+   * directory extensions it is a single entry keyed by the property name.
+   */
+  values: Record<string, unknown>;
+}
+
+/** One page of {@link ExtensionObjectRow}s plus paging metadata. */
+export interface ExtensionObjectsPage {
+  rows: ExtensionObjectRow[];
+  /** Graph `@odata.nextLink` for the following page, if any. */
+  nextLink?: string;
+  /** Total matching objects from `@odata.count` (first page only). */
+  totalCount?: number;
+}
+
+// ---------- Open extensions (openTypeExtension) ----------
+
+/**
+ * Resource kinds that support open extensions (Microsoft.Graph.openTypeExtension)
+ * and are reachable with the app's directory read scopes.
+ */
+export const openExtensionResourceValues = [
+  'User',
+  'Group',
+  'Device',
+  'Organization',
+] as const;
+export type OpenExtensionResource = (typeof openExtensionResourceValues)[number];
+
+/**
+ * A single open extension instance stored on a directory object. Open
+ * extensions are schemaless: `data` holds whatever custom properties were
+ * written alongside the reserved `id`/`extensionName` fields.
+ */
+export interface OpenExtensionInstance {
+  /** The extension name / id (e.g. `com.contoso.roamingSettings`). */
+  id: string;
+  /** Custom key/value data stored on the extension. */
+  data: Record<string, unknown>;
+}
