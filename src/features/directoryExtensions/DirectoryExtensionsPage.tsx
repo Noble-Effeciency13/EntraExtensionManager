@@ -33,6 +33,7 @@ import {
 } from '@fluentui/react-components';
 import {
   Add24Regular,
+  ArrowCircleRight24Regular,
   ArrowDownload24Regular,
   ArrowSync24Regular,
   ArrowUpload24Regular,
@@ -64,6 +65,7 @@ import { UsageDialog } from '@/components/UsageDialog';
 import { AuditLogDialog } from '@/components/AuditLogDialog';
 import { ManifestSnippetDialog } from '@/components/ManifestSnippetDialog';
 import { ValidateValueDialog } from '@/components/ValidateValueDialog';
+import { AssignValueDialog } from '@/components/AssignValueDialog';
 import { ImportDialog } from '@/components/ImportDialog';
 import { DirectoryExtensionEditor } from './DirectoryExtensionEditor';
 import { useAppToast } from '@/hooks/useAppToast';
@@ -151,6 +153,7 @@ export function DirectoryExtensionsPage() {
   const [auditOf, setAuditOf] = useState<DirectoryExtensionProperty | null>(null);
   const [manifestOf, setManifestOf] = useState<DirectoryExtensionProperty | null>(null);
   const [validateOf, setValidateOf] = useState<DirectoryExtensionProperty | null>(null);
+  const [assignOf, setAssignOf] = useState<DirectoryExtensionProperty | null>(null);
 
   usePageShortcut('eem:new', () => {
     if (isEdit) setAdding({});
@@ -363,6 +366,7 @@ export function DirectoryExtensionsPage() {
                     onAudit={(ext) => setAuditOf(ext)}
                     onManifest={(ext) => setManifestOf(ext)}
                     onValidate={(ext) => setValidateOf(ext)}
+                    onAssign={(ext) => setAssignOf(ext)}
                   />
                 </AccordionPanel>
               </AccordionItem>
@@ -432,6 +436,14 @@ export function DirectoryExtensionsPage() {
         />
       )}
 
+      {assignOf && (
+        <AssignValueDialog
+          open={!!assignOf}
+          ext={assignOf}
+          onOpenChange={(o) => !o && setAssignOf(null)}
+        />
+      )}
+
       <DirectoryImportDialog
         open={importOpen}
         onOpenChange={setImportOpen}
@@ -453,6 +465,7 @@ interface SectionProps {
   onAudit: (ext: DirectoryExtensionProperty) => void;
   onManifest: (ext: DirectoryExtensionProperty) => void;
   onValidate: (ext: DirectoryExtensionProperty) => void;
+  onAssign: (ext: DirectoryExtensionProperty) => void;
 }
 
 function AppExtensionSection({
@@ -465,6 +478,7 @@ function AppExtensionSection({
   onAudit,
   onManifest,
   onValidate,
+  onAssign,
 }: SectionProps) {
   const styles = useStyles();
   const toast = useAppToast();
@@ -516,14 +530,26 @@ function AppExtensionSection({
         columnId: 'actions',
         renderHeaderCell: () => '',
         renderCell: (e) => (
-          <Menu>
-            <MenuTrigger disableButtonEnhancement>
-              <Button
-                appearance="subtle"
-                icon={<MoreHorizontal24Regular />}
-                aria-label={`Actions for ${e.name}`}
-              />
-            </MenuTrigger>
+          <div style={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+            {isEdit && (
+              <Tooltip content="Assign value to an object" relationship="label">
+                <Button
+                  appearance="subtle"
+                  size="small"
+                  icon={<ArrowCircleRight24Regular />}
+                  aria-label={`Assign value for ${e.name}`}
+                  onClick={() => onAssign(e)}
+                />
+              </Tooltip>
+            )}
+            <Menu>
+              <MenuTrigger disableButtonEnhancement>
+                <Button
+                  appearance="subtle"
+                  icon={<MoreHorizontal24Regular />}
+                  aria-label={`Actions for ${e.name}`}
+                />
+              </MenuTrigger>
             <MenuPopover>
               <MenuList>
                 <MenuItem
@@ -565,10 +591,11 @@ function AppExtensionSection({
               </MenuList>
             </MenuPopover>
           </Menu>
+          </div>
         ),
       }),
     ],
-    [isEdit, onAudit, onDelete, onManifest, onUsage, onValidate],
+    [isEdit, onAudit, onAssign, onDelete, onManifest, onUsage, onValidate],
   );
 
   const columnSizingOptions = useMemo<TableColumnSizingOptions>(
@@ -577,9 +604,9 @@ function AppExtensionSection({
       dataType: { defaultWidth: 120, minWidth: 90 },
       targetObjects: { defaultWidth: 220, minWidth: 120 },
       source: { defaultWidth: 160, minWidth: 120 },
-      actions: { defaultWidth: 56, minWidth: 56, idealWidth: 56 },
+      actions: { defaultWidth: isEdit ? 88 : 56, minWidth: isEdit ? 88 : 56, idealWidth: isEdit ? 88 : 56 },
     }),
-    [],
+    [isEdit],
   );
 
   return (
