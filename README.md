@@ -1,10 +1,15 @@
 # Entra Extensions Manager
 
-[![Build](https://github.com/CWCOS/EntraExtensionsManager/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/CWCOS/EntraExtensionsManager/actions/workflows/ci.yml)
-![Version](https://img.shields.io/github/package-json/v/CWCOS/EntraExtensionsManager?label=version)
-![Downloads](https://img.shields.io/github/downloads/CWCOS/EntraExtensionsManager/total?label=downloads)
-![Last commit](https://img.shields.io/github/last-commit/CWCOS/EntraExtensionsManager)
-![Open issues](https://img.shields.io/github/issues/CWCOS/EntraExtensionsManager)
+[![Build](https://img.shields.io/github/actions/workflow/status/Noble-Effeciency13/EntraExtensionManager/ci.yml?branch=main&label=build)](https://github.com/Noble-Effeciency13/EntraExtensionManager/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/Noble-Effeciency13/EntraExtensionManager?label=release)](https://github.com/Noble-Effeciency13/EntraExtensionManager/releases/latest)
+![Downloads](https://img.shields.io/github/downloads/Noble-Effeciency13/EntraExtensionManager/total?label=downloads)
+[![License: MIT](https://img.shields.io/github/license/Noble-Effeciency13/EntraExtensionManager)](https://github.com/Noble-Effeciency13/EntraExtensionManager/blob/main/LICENSE)
+![Last commit](https://img.shields.io/github/last-commit/Noble-Effeciency13/EntraExtensionManager)
+![Open issues](https://img.shields.io/github/issues/Noble-Effeciency13/EntraExtensionManager)
+
+<p align="center">
+  <a href="https://www.buymeacoffee.com/chanceofsecurity"><img src="https://img.buymeacoffee.com/button-api/?text=Buy me a coffee&emoji=☕&slug=chanceofsecurity&button_colour=fca158&font_colour=000000&font_family=Inter&outline_colour=000000&coffee_colour=FFDD00" height="30" /></a>
+</p>
 
 Entra Extensions Manager is a managed, browser-based portal for discovering, reviewing, and managing Microsoft Entra ID extension definitions through Microsoft Graph.
 
