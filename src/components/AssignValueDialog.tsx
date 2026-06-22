@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Badge,
   Button,
   Caption1,
+  Combobox,
   Dialog,
   DialogActions,
   DialogBody,
@@ -21,6 +22,10 @@ import {
 } from '@fluentui/react-components';
 import { Warning16Regular } from '@fluentui/react-icons';
 import { useAssignExtensionValue } from '@/api/dryRun';
+import {
+  useDirectoryObjectSearch,
+  type DirectoryObjectResult,
+} from '@/api/directoryObjects';
 import { useAppToast } from '@/hooks/useAppToast';
 import type { DirectoryExtensionProperty } from '@/types/extensions';
 
@@ -36,6 +41,15 @@ const useStyles = makeStyles({
     overflowY: 'auto',
     whiteSpace: 'pre-wrap',
     overflowWrap: 'anywhere',
+  },
+  listbox: { maxHeight: 'min(40vh, 280px)', overflowY: 'auto' },
+  optionLabel: { display: 'flex', flexDirection: 'column', minWidth: 0 },
+  optionSecondary: {
+    fontSize: tokens.fontSizeBase100,
+    color: tokens.colorNeutralForeground3,
+    fontFamily: tokens.fontFamilyMonospace,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
   },
   warn: {
     display: 'inline-flex',
@@ -58,22 +72,69 @@ export function AssignValueDialog({ open, onOpenChange, ext }: Props) {
   const toast = useAppToast();
 
   const [targetType, setTargetType] = useState(ext.targetObjects[0] ?? 'User');
+  const [searchText, setSearchText] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
+  const [selectedObject, setSelectedObject] = useState<DirectoryObjectResult | null>(null);
   const [targetId, setTargetId] = useState('');
   const [value, setValue] = useState('');
   const [readBack, setReadBack] = useState<string | null>(null);
 
+  const isOrg = targetType === 'Organization';
+
+  // Reset search/selection when target type changes.
+  useEffect(() => {
+    setSearchText('');
+    setDebouncedQuery('');
+    setSelectedObject(null);
+    setTargetId('');
+  }, [targetType]);
+
+  // Debounce — 300ms, same as OpenExtensionsPage.
+  useEffect(() => {
+    const h = setTimeout(() => setDebouncedQuery(searchText), 300);
+    return () => clearTimeout(h);
+  }, [searchText]);
+
+  const searchQ = useDirectoryObjectSearch(targetType as never, debouncedQuery, !isOrg);
+
   const close = () => {
     onOpenChange(false);
+    setSearchText('');
+    setDebouncedQuery('');
+    setSelectedObject(null);
     setTargetId('');
     setValue('');
     setReadBack(null);
   };
 
+  const GUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const looksLikeGuid = GUID_RE.test(searchText.trim());
+  const looksLikeUpn =
+    targetType === 'User' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(searchText.trim());
+  const canUseDirect = looksLikeGuid || looksLikeUpn;
+
+  const commitOption = (optionValue?: string) => {
+    if (!optionValue || optionValue.startsWith('__hint')) return;
+    if (optionValue.startsWith('__direct:')) {
+      const id = optionValue.slice('__direct:'.length).trim();
+      setSelectedObject({ id, displayName: id });
+      setSearchText(id);
+      setTargetId(id);
+      return;
+    }
+    const match = searchQ.data?.find((r) => r.id === optionValue);
+    if (match) {
+      setSelectedObject(match);
+      setSearchText(match.displayName);
+      setTargetId(match.id);
+    }
+  };
+
   const run = async () => {
     setReadBack(null);
-    const trimmedId = targetId.trim();
+    const effectiveId = isOrg ? 'organization' : targetId.trim();
     const trimmedVal = value.trim();
-    if (!trimmedId || !trimmedVal) return;
+    if (!effectiveId || !trimmedVal) return;
 
     // Coerce value to the correct primitive type.
     let coerced: unknown = trimmedVal;
@@ -91,12 +152,12 @@ export function AssignValueDialog({ open, onOpenChange, ext }: Props) {
     try {
       const res = await assign.mutateAsync({
         targetType,
-        targetId: trimmedId,
+        targetId: effectiveId,
         attribute: ext.name,
         value: coerced,
       });
       setReadBack(JSON.stringify(res.readBack, null, 2));
-      toast.success('Value assigned', `${ext.name} on ${targetType}/${trimmedId}`);
+      toast.success('Value assigned', `${ext.name} on ${targetType}/${effectiveId}`);
     } catch (e) {
       toast.error('Assign failed', e);
     }
@@ -137,23 +198,71 @@ export function AssignValueDialog({ open, onOpenChange, ext }: Props) {
             </Field>
 
             <Field
-              label="Object id or UPN"
+              label="Object"
               hint={
-                targetType === 'User'
-                  ? 'Object id or userPrincipalName'
-                  : 'Object id'
+                isOrg
+                  ? 'Organization is a singleton — it will be used automatically'
+                  : targetType === 'User'
+                    ? 'Search by name or UPN, or paste an object id'
+                    : 'Search by name, or paste an object id'
               }
-              required
+              required={!isOrg}
             >
-              <Input
-                value={targetId}
-                onChange={(_, d) => setTargetId(d.value)}
-                placeholder={
-                  targetType === 'User'
-                    ? 'e.g. user@contoso.com or object-guid'
-                    : 'e.g. object-guid'
-                }
-              />
+              {isOrg ? (
+                <Input readOnly value="Organization (tenant)" />
+              ) : (
+                <Combobox
+                  placeholder={
+                    targetType === 'User'
+                      ? 'Type name, UPN, or paste a GUID…'
+                      : 'Type name or paste a GUID…'
+                  }
+                  value={selectedObject ? selectedObject.displayName : searchText}
+                  selectedOptions={selectedObject ? [selectedObject.id] : []}
+                  onInput={(e) => {
+                    setSearchText((e.target as HTMLInputElement).value);
+                    if (selectedObject) {
+                      setSelectedObject(null);
+                      setTargetId('');
+                    }
+                  }}
+                  onOptionSelect={(_, d) => commitOption(d.optionValue)}
+                  positioning={{ autoSize: 'height-always', position: 'below', align: 'start' }}
+                  listbox={{ className: styles.listbox }}
+                >
+                  {canUseDirect && (
+                    <Option value={`__direct:${searchText.trim()}`} text={searchText.trim()}>
+                      Look up "{searchText.trim()}" directly
+                    </Option>
+                  )}
+                  {searchQ.isFetching ? (
+                    <Option value="__hint_loading" disabled text="Searching">
+                      Searching…
+                    </Option>
+                  ) : searchQ.error ? (
+                    <Option value="__hint_error" disabled text="Error">
+                      Search failed: {(searchQ.error as Error).message}
+                    </Option>
+                  ) : debouncedQuery.trim().length < 2 ? (
+                    <Option value="__hint_min" disabled text="Keep typing">
+                      Type at least 2 characters to search…
+                    </Option>
+                  ) : (searchQ.data?.length ?? 0) === 0 ? (
+                    <Option value="__hint_empty" disabled text="No matches">No matches</Option>
+                  ) : (
+                    searchQ.data!.map((r) => (
+                      <Option key={r.id} value={r.id} text={r.displayName}>
+                        <div className={styles.optionLabel}>
+                          <span>{r.displayName}</span>
+                          {r.secondary && (
+                            <span className={styles.optionSecondary}>{r.secondary}</span>
+                          )}
+                        </div>
+                      </Option>
+                    ))
+                  )}
+                </Combobox>
+              )}
             </Field>
 
             <Field
@@ -200,7 +309,7 @@ export function AssignValueDialog({ open, onOpenChange, ext }: Props) {
               onClick={run}
               disabled={
                 assign.isPending ||
-                !targetId.trim() ||
+                (!isOrg && !targetId.trim()) ||
                 !value.trim()
               }
             >
