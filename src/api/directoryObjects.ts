@@ -3,6 +3,12 @@ import { createGraphClient } from '@/graph/client';
 import { useGraphToken } from '@/auth/useGraphToken';
 import type { OpenExtensionResource } from '@/types/extensions';
 
+/** All directory resource types that can be searched by display name. */
+export type SearchableResource =
+  | Exclude<OpenExtensionResource, 'Organization'>
+  | 'Application'
+  | 'AdministrativeUnit';
+
 /** A directory object surfaced by the search picker. */
 export interface DirectoryObjectResult {
   id: string;
@@ -24,10 +30,7 @@ interface SearchConfig {
  * is a singleton with no meaningful free-text search (handled separately by
  * {@link useOrganization}).
  */
-const SEARCH_CONFIG: Record<
-  Exclude<OpenExtensionResource, 'Organization'>,
-  SearchConfig
-> = {
+const SEARCH_CONFIG: Record<SearchableResource, SearchConfig> = {
   User: {
     path: '/users',
     searchFields: ['displayName', 'userPrincipalName', 'mail'],
@@ -46,6 +49,17 @@ const SEARCH_CONFIG: Record<
     select: ['id', 'displayName', 'deviceId'],
     secondary: (o) => o.deviceId as string | undefined,
   },
+  Application: {
+    path: '/applications',
+    searchFields: ['displayName'],
+    select: ['id', 'displayName', 'appId'],
+    secondary: (o) => o.appId as string | undefined,
+  },
+  AdministrativeUnit: {
+    path: '/directory/administrativeUnits',
+    searchFields: ['displayName'],
+    select: ['id', 'displayName'],
+  },
 };
 
 /**
@@ -55,14 +69,13 @@ const SEARCH_CONFIG: Record<
  * directory isn't hammered on every keystroke. Returns up to 25 matches.
  */
 export function useDirectoryObjectSearch(
-  resource: OpenExtensionResource,
+  resource: SearchableResource | 'Organization',
   query: string,
   enabled: boolean,
 ) {
   const getToken = useGraphToken();
   const trimmed = query.trim();
-  const cfg =
-    resource === 'Organization' ? null : SEARCH_CONFIG[resource];
+  const cfg = resource === 'Organization' ? null : SEARCH_CONFIG[resource as SearchableResource];
 
   return useQuery({
     queryKey: ['directoryObjectSearch', resource, trimmed] as const,

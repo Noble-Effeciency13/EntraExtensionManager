@@ -95,7 +95,11 @@ export function AssignValueDialog({ open, onOpenChange, ext }: Props) {
     return () => clearTimeout(h);
   }, [searchText]);
 
-  const searchQ = useDirectoryObjectSearch(targetType as never, debouncedQuery, !isOrg);
+  const searchQ = useDirectoryObjectSearch(
+    targetType as 'User' | 'Group' | 'Device' | 'Application' | 'AdministrativeUnit',
+    debouncedQuery,
+    !isOrg,
+  );
 
   const close = () => {
     onOpenChange(false);
