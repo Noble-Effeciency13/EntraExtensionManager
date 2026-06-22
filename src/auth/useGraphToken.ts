@@ -25,8 +25,10 @@ export function useGraphToken() {
       return result.accessToken;
     } catch (err) {
       if (err instanceof InteractionRequiredAuthError) {
-        const result = await instance.acquireTokenPopup({ scopes, authority });
-        return result.accessToken;
+        await instance.acquireTokenRedirect({ scopes, authority });
+        // Browser navigates away — this line is unreachable but satisfies
+        // the TypeScript compiler's return-type requirement.
+        throw new Error('Redirecting for authentication…');
       }
       throw err;
     }

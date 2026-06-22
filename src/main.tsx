@@ -42,6 +42,15 @@ async function bootstrap() {
     ) {
       msalInstance.setActiveAccount(event.payload.account);
     }
+    // When the browser returns from an edit-mode acquireTokenRedirect, restore
+    // the pending mode so the user lands back in edit mode automatically.
+    if (
+      event.eventType === EventType.ACQUIRE_TOKEN_SUCCESS &&
+      sessionStorage.getItem('eem.pendingMode') === 'edit'
+    ) {
+      sessionStorage.removeItem('eem.pendingMode');
+      localStorage.setItem('eem.mode', 'edit');
+    }
   });
 
   ReactDOM.createRoot(document.getElementById('root')!).render(

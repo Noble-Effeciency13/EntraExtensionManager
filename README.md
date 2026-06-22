@@ -34,6 +34,7 @@ The portal is designed for administrators and identity engineers who need a safe
 - [Security boundaries](#security-boundaries)
 - [Microsoft Graph behavior to be aware of](#microsoft-graph-behavior-to-be-aware-of)
 - [Support-safe diagnostics](#support-safe-diagnostics)
+- [Further reading](#further-reading)
 
 ## What the portal does
 
@@ -285,3 +286,8 @@ When reporting an issue, useful details include:
 - Browser name and version.
 
 Do not share access tokens, client secrets, unsanitized audit log exports, or sensitive tenant/user/object identifiers unless you are certain they are safe to disclose.
+
+## Further reading
+
+- **[Choosing the Right Extension Type in Microsoft Entra](https://www.chanceofsecurity.com/post/choosing-the-right-extension-type-in-microsoft-entra)** — not sure whether to use a schema extension, directory extension, or open extension? This article walks through the differences, tradeoffs, and when to reach for each type.
+- **Entra Extensions Manager — a walkthrough** *(article coming soon)* — a hands-on look at using this portal to manage extension attributes in a real Entra tenant.

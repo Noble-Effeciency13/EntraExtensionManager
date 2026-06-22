@@ -207,7 +207,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
               appearance="primary"
               size="large"
               className={styles.signInButton}
-              onClick={() => instance.loginPopup(loginRequest).catch(console.error)}
+              onClick={() => instance.loginRedirect(loginRequest).catch(console.error)}
             >
               Sign in with Microsoft Entra
             </Button>

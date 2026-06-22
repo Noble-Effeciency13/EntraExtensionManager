@@ -58,23 +58,27 @@ export function TenantSwitcher() {
       if (cached) {
         instance.setActiveAccount(cached);
       } else {
-        // First visit to this tenant: loginPopup handles consent automatically
-        // (AAD only shows the consent screen when the app hasn't been granted
-        // access in that tenant yet).
-        const result = await instance.loginPopup({
+        // First visit to this tenant: loginRedirect handles consent
+        // automatically (AAD only shows the consent screen when the app
+        // hasn't been granted access in that tenant yet). The active account
+        // is set by the event callback in main.tsx on return.
+        // Persist the success message so AppShell can show it after reload.
+        sessionStorage.setItem(
+          'eem.pendingToast',
+          JSON.stringify({ title: 'Tenant switched', body: tenant.displayName }),
+        );
+        await instance.loginRedirect({
           authority: buildTenantAuthority(tenant.tenantId),
           scopes: readScopes,
           prompt: 'select_account',
         });
-        if (result?.account) {
-          instance.setActiveAccount(result.account);
-        }
+        // Browser navigates away — code below is unreachable.
       }
       await qc.invalidateQueries();
       toast.success('Tenant switched', `Now connected to ${tenant.displayName}`);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      if (!msg.includes('user_cancelled') && !msg.includes('popup_window_error')) {
+      if (!msg.includes('user_cancelled')) {
         toast.error(
           'Tenant switch failed',
           err instanceof Error ? err : new Error(msg),

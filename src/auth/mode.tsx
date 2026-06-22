@@ -25,7 +25,7 @@ interface ModeContextValue {
    * consent or no account is signed in.
    */
   setMode: (next: Mode) => Promise<boolean>;
-  /** True while an `edit` consent popup is in flight. */
+  /** True while an `edit` consent redirect is in flight. */
   switching: boolean;
 }
 
@@ -51,21 +51,25 @@ export function ModeProvider({ children }: { children: ReactNode }) {
         if (!account) return false;
         setSwitching(true);
         try {
+          // Persist intent before redirecting so the event callback in main.tsx
+          // can restore edit mode when the browser returns from the redirect.
+          sessionStorage.setItem('eem.pendingMode', 'edit');
           // Use `prompt: 'login'` so the user sees a visible sign-in step
           // (so they notice they're switching into edit mode) but the consent
           // screen is *not* re-shown on every toggle. Consent is only
           // re-presented by AAD when the requested scopes have not already
           // been granted to this app/user.
-          await instance.acquireTokenPopup({
+          await instance.acquireTokenRedirect({
             scopes: editScopes,
             account,
             prompt: 'login',
             authority: buildTenantAuthority(account.tenantId),
           });
-          setModeState('edit');
+          // Browser navigates away — code below is unreachable.
           return true;
         } catch (err) {
-          console.warn('Edit-mode sign-in failed or was cancelled.', err);
+          sessionStorage.removeItem('eem.pendingMode');
+          console.warn('Edit-mode redirect failed.', err);
           return false;
         } finally {
           setSwitching(false);

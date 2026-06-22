@@ -78,6 +78,12 @@ const useStyles = makeStyles({
       backgroundColor: tokens.colorSubtleBackgroundHover,
     },
   },
+  mvpLogo: {
+    height: '18px',
+    width: 'auto',
+    display: 'block',
+    borderRadius: '2px',
+  },
   author: {
     fontWeight: tokens.fontWeightSemibold,
     color: tokens.colorNeutralForeground2,
@@ -155,6 +161,13 @@ export function AppFooter() {
       <span className={styles.groupDivider} role="separator" aria-orientation="vertical" />
 
       <div className={styles.section}>
+        <Tooltip content="Microsoft MVP" relationship="label">
+          <img
+            src="/mvplogo.png"
+            alt="Microsoft MVP"
+            className={styles.mvpLogo}
+          />
+        </Tooltip>
         <span className={styles.author}>{AUTHOR}</span>
         <span className={styles.divider} role="separator" aria-orientation="vertical" />
         <Tooltip content="LinkedIn" relationship="label">

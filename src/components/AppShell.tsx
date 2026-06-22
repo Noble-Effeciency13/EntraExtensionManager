@@ -1,4 +1,4 @@
-import { ReactNode, useState } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useMsal } from '@azure/msal-react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -213,6 +213,20 @@ export function AppShell({ children, theme, onToggleTheme }: AppShellProps) {
   const qc = useQueryClient();
   const [aboutOpen, setAboutOpen] = useState(false);
 
+  // Show any toast that was deferred across a redirect (e.g. tenant switch).
+  useEffect(() => {
+    const raw = sessionStorage.getItem('eem.pendingToast');
+    if (!raw) return;
+    sessionStorage.removeItem('eem.pendingToast');
+    try {
+      const { title, body } = JSON.parse(raw) as { title: string; body?: string };
+      toast.success(title, body);
+    } catch {
+      // Malformed entry — silently discard.
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const initials = (account?.name ?? account?.username ?? '?')
     .split(/\s+/)
     .map((p) => p[0])
@@ -371,13 +385,9 @@ export function AppShell({ children, theme, onToggleTheme }: AppShellProps) {
                   icon={<PersonSwap24Regular />}
                   onClick={() =>
                     instance
-                      .loginPopup({
+                      .loginRedirect({
                         scopes: ['User.Read'],
                         prompt: 'select_account',
-                      })
-                      .then((res) => {
-                        if (res?.account) instance.setActiveAccount(res.account);
-                        qc.invalidateQueries();
                       })
                       .catch(console.error)
                   }
@@ -399,7 +409,7 @@ export function AppShell({ children, theme, onToggleTheme }: AppShellProps) {
                 <MenuItem
                   icon={<SignOut24Regular />}
                   onClick={() =>
-                    instance.logoutPopup({ account }).catch(console.error)
+                    instance.logoutRedirect({ account }).catch(console.error)
                   }
                 >
                   Sign out

@@ -76,12 +76,14 @@ export function useTenants(): UseTenants {
               setNeedsConsent(true);
               return;
             }
-            // Called from a click handler — popup is allowed by the browser.
-            tokenResult = await instance.acquireTokenPopup({
+            // Called from a click handler — initiate redirect for consent.
+            await instance.acquireTokenRedirect({
               account,
               scopes: [MANAGEMENT_SCOPE],
               authority,
             });
+            // Browser navigates away; the silent fetch runs again on return.
+            return;
           } else {
             throw err;
           }
