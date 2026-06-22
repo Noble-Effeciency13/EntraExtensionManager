@@ -28,9 +28,10 @@ import {
 } from '@fluentui/react-icons';
 import type { OverviewExtension } from '@/components/ExtensionsOverview';
 import {
-  canProbe,
   probeableTargets,
   useExtensionObjects,
+  useMultiTargetObjects,
+  type ExtensionObjectRowWithTarget,
   type ObjectsInput,
 } from '@/api/usageObjects';
 import type { ExtensionObjectRow } from '@/types/extensions';
@@ -129,20 +130,39 @@ export function UsageObjectsDrilldown({ source }: { source: OverviewExtension })
     () => probeableTargets(variant, source.ext),
     [variant, source.ext],
   );
-  const [target, setTarget] = useState<string>(targets[0] ?? '');
+  const [target, setTarget] = useState<string>(
+    targets.length > 1 ? '__all__' : (targets[0] ?? ''),
+  );
   const [reveal, setReveal] = useState(false);
 
-  const input = toInput(source, target);
-  const probeOk = canProbe(input);
+  const isAll = target === '__all__';
+  // canProbe only depends on the extension variant, not the specific target.
+  const probeOk = source.kind === 'schema' ? source.ext.properties.length > 0 : true;
 
-  const enabled = !!target && probeOk;
-  const q = useExtensionObjects(input, enabled);
+  // Single-target query — disabled in "All" mode.
+  const singleInput = toInput(source, isAll ? (targets[0] ?? '') : target);
+  const q = useExtensionObjects(singleInput, !isAll && !!target && probeOk);
 
-  const rows = useMemo(
-    () => q.data?.pages.flatMap((p) => p.rows) ?? [],
-    [q.data],
+  // Multi-target query — disabled in single-target mode.
+  const allInputs = useMemo(
+    () => targets.map((t) => toInput(source, t)),
+    [targets, source],
   );
-  const total = q.data?.pages[0]?.totalCount;
+  const multiQ = useMultiTargetObjects(allInputs, isAll && probeOk);
+
+  // Unified derived values for the current mode.
+  const rows: (ExtensionObjectRow | ExtensionObjectRowWithTarget)[] = useMemo(
+    () => isAll ? multiQ.rows : (q.data?.pages.flatMap((p) => p.rows) ?? []),
+    [isAll, multiQ.rows, q.data],
+  );
+  const total = isAll ? undefined : q.data?.pages[0]?.totalCount;
+  const isLoading = isAll ? multiQ.isLoading : q.isLoading;
+  const isFetching = isAll ? multiQ.isFetching : (q.isFetching && !q.isFetchingNextPage);
+  const loadingError: Error | null = isAll
+    ? (multiQ.errors[0] ?? null)
+    : ((q.error as Error | null) ?? null);
+  const hasNextPage = isAll ? false : (q.hasNextPage ?? false);
+
   const valueColumns = useMemo(() => {
     const set = new Set<string>();
     rows.forEach((r) => Object.keys(r.values).forEach((k) => set.add(k)));
@@ -181,11 +201,16 @@ export function UsageObjectsDrilldown({ source }: { source: OverviewExtension })
           <Caption1>Target type</Caption1>
           <Dropdown
             size="small"
-            value={target}
+            value={isAll ? 'All target types' : target}
             selectedOptions={[target]}
             onOptionSelect={(_, d) => setTarget(d.optionValue ?? target)}
             style={{ minWidth: '160px' }}
           >
+            {targets.length > 1 && (
+              <Option key="__all__" value="__all__">
+                All target types
+              </Option>
+            )}
             {targets.map((t) => (
               <Option key={t} value={t}>
                 {t}
@@ -199,8 +224,8 @@ export function UsageObjectsDrilldown({ source }: { source: OverviewExtension })
             size="small"
             appearance="subtle"
             icon={<ArrowClockwise16Regular />}
-            onClick={() => q.refetch()}
-            disabled={q.isFetching}
+            onClick={() => isAll ? multiQ.refetchAll() : q.refetch()}
+            disabled={isFetching}
             aria-label="Refresh object list"
           />
         </Tooltip>
@@ -215,13 +240,14 @@ export function UsageObjectsDrilldown({ source }: { source: OverviewExtension })
         <div className={styles.spacer} />
 
         <div className={styles.meta}>
-          {q.isFetching && !q.isFetchingNextPage ? (
+          {isFetching ? (
             <Spinner size="tiny" label="Loading…" />
           ) : (
             <Caption1>
               {rows.length}
-              {typeof total === 'number' ? ` of ${total}` : ''} object
+              {!isAll && typeof total === 'number' ? ` of ${total}` : ''} object
               {rows.length === 1 ? '' : 's'}
+              {isAll && multiQ.isCapped ? ' (capped at 200 per target type)' : ''}
             </Caption1>
           )}
           <Tooltip content="Export loaded rows as CSV" relationship="label">
@@ -232,7 +258,7 @@ export function UsageObjectsDrilldown({ source }: { source: OverviewExtension })
               disabled={rows.length === 0}
               onClick={() =>
                 downloadCsv(
-                  `usage-${exportName}-${target}-${timestampSuffix()}.csv`,
+                  `usage-${exportName}-${isAll ? 'all' : target}-${timestampSuffix()}.csv`,
                   flattenForExport(rows),
                 )
               }
@@ -248,7 +274,7 @@ export function UsageObjectsDrilldown({ source }: { source: OverviewExtension })
               disabled={rows.length === 0}
               onClick={() =>
                 downloadJson(
-                  `usage-${exportName}-${target}-${timestampSuffix()}.json`,
+                  `usage-${exportName}-${isAll ? 'all' : target}-${timestampSuffix()}.json`,
                   rows,
                 )
               }
@@ -267,21 +293,22 @@ export function UsageObjectsDrilldown({ source }: { source: OverviewExtension })
         </Caption1>
       )}
 
-      {q.error ? (
+      {loadingError ? (
         <Caption1 style={{ color: 'tomato' }}>
-          Couldn't load objects: {(q.error as Error).message}
+          Couldn’t load objects: {loadingError.message}
         </Caption1>
-      ) : q.isLoading ? (
+      ) : isLoading ? (
         <Spinner size="small" label="Listing objects…" />
       ) : rows.length === 0 ? (
         <Caption1 className={styles.note}>
-          No {target} objects currently hold a value for this extension.
+          No {isAll ? '' : `${target} `}objects currently hold a value for this extension.
         </Caption1>
       ) : (
         <div className={styles.tableWrap}>
-          <Table size="small" aria-label={`Objects using ${exportName} on ${target}`}>
+          <Table size="small" aria-label={`Objects using ${exportName} on ${isAll ? 'all target types' : target}`}>
             <TableHeader>
               <TableRow>
+                {isAll && <TableHeaderCell style={{ width: 120 }}>Target</TableHeaderCell>}
                 <TableHeaderCell>Object</TableHeaderCell>
                 <TableHeaderCell>Identifier</TableHeaderCell>
                 {valueColumns.map((c) => (
@@ -290,39 +317,51 @@ export function UsageObjectsDrilldown({ source }: { source: OverviewExtension })
               </TableRow>
             </TableHeader>
             <TableBody>
-              {rows.map((r) => (
-                <TableRow key={r.id}>
-                  <TableCell>
-                    <Body1>{r.displayName}</Body1>
-                    <div className={styles.monoId}>{r.id}</div>
-                  </TableCell>
-                  <TableCell>
-                    <span className={styles.monoId}>{r.identifier ?? '—'}</span>
-                  </TableCell>
-                  {valueColumns.map((c) => {
-                    const raw = r.values[c];
-                    const text = formatValue(raw);
-                    const isEmpty = text === '—';
-                    return (
-                      <TableCell key={c}>
-                        {isEmpty ? (
-                          '—'
-                        ) : reveal ? (
-                          <Tag appearance="outline" size="small">
-                            {text}
-                          </Tag>
-                        ) : (
-                          <span className={styles.masked}>••••••</span>
-                        )}
+              {rows.map((r) => {
+                const rowTarget = isAll
+                  ? (r as ExtensionObjectRowWithTarget).target
+                  : target;
+                return (
+                  <TableRow key={`${rowTarget}:${r.id}`}>
+                    {isAll && (
+                      <TableCell>
+                        <Badge appearance="tint" color="informative">
+                          {rowTarget}
+                        </Badge>
                       </TableCell>
-                    );
-                  })}
-                </TableRow>
-              ))}
+                    )}
+                    <TableCell>
+                      <Body1>{r.displayName}</Body1>
+                      <div className={styles.monoId}>{r.id}</div>
+                    </TableCell>
+                    <TableCell>
+                      <span className={styles.monoId}>{r.identifier ?? '—'}</span>
+                    </TableCell>
+                    {valueColumns.map((c) => {
+                      const raw = r.values[c];
+                      const text = formatValue(raw);
+                      const isEmpty = text === '—';
+                      return (
+                        <TableCell key={c}>
+                          {isEmpty ? (
+                            '—'
+                          ) : reveal ? (
+                            <Tag appearance="outline" size="small">
+                              {text}
+                            </Tag>
+                          ) : (
+                            <span className={styles.masked}>••••••</span>
+                          )}
+                        </TableCell>
+                      );
+                    })}
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
 
-          {q.hasNextPage && (
+          {hasNextPage && (
             <div className={styles.loadMore}>
               <Button
                 size="small"
@@ -339,10 +378,17 @@ export function UsageObjectsDrilldown({ source }: { source: OverviewExtension })
               </Button>
             </div>
           )}
+          {isAll && multiQ.isCapped && (
+            <div className={styles.loadMore}>
+              <Caption1 className={styles.note}>
+                Showing up to 200 objects per target type. Switch to a single target for full pagination.
+              </Caption1>
+            </div>
+          )}
         </div>
       )}
 
-      {typeof total === 'number' && total > rows.length && !q.hasNextPage && (
+      {!isAll && typeof total === 'number' && total > rows.length && !q.hasNextPage && (
         <Caption1 className={styles.note}>
           <Badge appearance="tint" color="informative">
             Showing first {rows.length}
