@@ -157,14 +157,138 @@ const newsprintRadii: Partial<Theme> = {
   borderRadiusXLarge: '2px',
 };
 
-/** Apply a skin's font + corner identity on top of a generated Fluent theme. */
-function withIdentity(
+/**
+ * Apply a skin's identity on top of a generated Fluent theme: base font, corner
+ * radii, and a set of neutral surface overrides. `createLight/DarkTheme` only
+ * derive *brand* colors from the ramp — the neutral canvas, panels, strokes and
+ * hover states stay greyscale — so we tint those here to achieve a wholesale
+ * palette change rather than a mere accent swap.
+ */
+function applySkin(
   base: Theme,
   fontFamilyBase: string,
   radii: Partial<Theme>,
+  neutrals: Partial<Theme>,
 ): Theme {
-  return { ...base, fontFamilyBase, ...radii };
+  return { ...base, fontFamilyBase, ...radii, ...neutrals };
 }
+
+// Retro — silver-blue XP work area (light) / royal navy (dark).
+const retroLightNeutrals: Partial<Theme> = {
+  colorNeutralBackground1: '#ffffff',
+  colorNeutralBackground1Hover: '#eaf2ff',
+  colorNeutralBackground1Pressed: '#dbe8fb',
+  colorNeutralBackground1Selected: '#e3edfd',
+  colorNeutralBackground2: '#d8e4f5',
+  colorNeutralBackground3: '#eaf1fb',
+  colorNeutralBackgroundDisabled: '#e8eef7',
+  colorSubtleBackgroundHover: '#e2ecfb',
+  colorSubtleBackgroundPressed: '#d2e1f7',
+  colorNeutralStroke1: '#9db6d8',
+  colorNeutralStroke2: '#c3d4ec',
+};
+const retroDarkNeutrals: Partial<Theme> = {
+  colorNeutralBackground1: '#16273f',
+  colorNeutralBackground1Hover: '#1e3350',
+  colorNeutralBackground1Pressed: '#101f33',
+  colorNeutralBackground1Selected: '#22395a',
+  colorNeutralBackground2: '#0e1a2e',
+  colorNeutralBackground3: '#1a2d49',
+  colorNeutralBackgroundDisabled: '#152439',
+  colorSubtleBackgroundHover: '#1d3350',
+  colorSubtleBackgroundPressed: '#162941',
+  colorNeutralStroke1: '#365a86',
+  colorNeutralStroke2: '#26415f',
+};
+
+// 8-bit — Game Boy LCD (light) / arcade CRT near-black (dark).
+const gamingLightNeutrals: Partial<Theme> = {
+  colorNeutralBackground1: '#e7f0cf',
+  colorNeutralBackground1Hover: '#dde8bd',
+  colorNeutralBackground1Pressed: '#cfdda8',
+  colorNeutralBackground1Selected: '#d6e2b2',
+  colorNeutralBackground2: '#cfe0b0',
+  colorNeutralBackground3: '#dde8c2',
+  colorNeutralBackgroundDisabled: '#d8e3bd',
+  colorSubtleBackgroundHover: '#d8e6b8',
+  colorSubtleBackgroundPressed: '#c8d9a0',
+  colorNeutralStroke1: '#8a9a5e',
+  colorNeutralStroke2: '#aab87f',
+  colorNeutralForeground1: '#26310f',
+};
+const gamingDarkNeutrals: Partial<Theme> = {
+  colorNeutralBackground1: '#0b1f12',
+  colorNeutralBackground1Hover: '#112b18',
+  colorNeutralBackground1Pressed: '#081a0e',
+  colorNeutralBackground1Selected: '#14331c',
+  colorNeutralBackground2: '#05140a',
+  colorNeutralBackground3: '#0e2614',
+  colorNeutralBackgroundDisabled: '#0a1d11',
+  colorSubtleBackgroundHover: '#112b18',
+  colorSubtleBackgroundPressed: '#0a2012',
+  colorNeutralStroke1: '#1f7a3a',
+  colorNeutralStroke2: '#16562b',
+};
+
+// Synthwave — pale lavender (light) / indigo night (dark).
+const synthwaveLightNeutrals: Partial<Theme> = {
+  colorNeutralBackground1: '#fdfbff',
+  colorNeutralBackground1Hover: '#f4ecff',
+  colorNeutralBackground1Pressed: '#e9dcfb',
+  colorNeutralBackground1Selected: '#efe3ff',
+  colorNeutralBackground2: '#f1e9fb',
+  colorNeutralBackground3: '#efe6fb',
+  colorNeutralBackgroundDisabled: '#ece3f7',
+  colorSubtleBackgroundHover: '#f0e6ff',
+  colorSubtleBackgroundPressed: '#e2d2f7',
+  colorNeutralStroke1: '#d8c4f0',
+  colorNeutralStroke2: '#e6d8f7',
+};
+const synthwaveDarkNeutrals: Partial<Theme> = {
+  colorNeutralBackground1: '#241a3a',
+  colorNeutralBackground1Hover: '#2e2247',
+  colorNeutralBackground1Pressed: '#1d1530',
+  colorNeutralBackground1Selected: '#33264f',
+  colorNeutralBackground2: '#170f2b',
+  colorNeutralBackground3: '#281b44',
+  colorNeutralBackgroundDisabled: '#211836',
+  colorSubtleBackgroundHover: '#2e2247',
+  colorSubtleBackgroundPressed: '#221838',
+  colorNeutralStroke1: '#4a3a6e',
+  colorNeutralStroke2: '#3a2c58',
+};
+
+// Newsprint — aged paper + ink (light) / after-hours press (dark).
+const newsprintLightNeutrals: Partial<Theme> = {
+  colorNeutralBackground1: '#f7f1e2',
+  colorNeutralBackground1Hover: '#efe6d2',
+  colorNeutralBackground1Pressed: '#e6dcc4',
+  colorNeutralBackground1Selected: '#ece2cc',
+  colorNeutralBackground2: '#ece2cd',
+  colorNeutralBackground3: '#e7ddc7',
+  colorNeutralBackgroundDisabled: '#e9e1d0',
+  colorSubtleBackgroundHover: '#ece2cd',
+  colorSubtleBackgroundPressed: '#ded2b6',
+  colorNeutralStroke1: '#b9a981',
+  colorNeutralStroke2: '#cdbfa0',
+  colorNeutralForeground1: '#1c1813',
+  colorNeutralForeground2: '#3a3228',
+  colorNeutralForeground3: '#5b5040',
+};
+const newsprintDarkNeutrals: Partial<Theme> = {
+  colorNeutralBackground1: '#221e17',
+  colorNeutralBackground1Hover: '#2a251c',
+  colorNeutralBackground1Pressed: '#1b1813',
+  colorNeutralBackground1Selected: '#2f2920',
+  colorNeutralBackground2: '#1a1712',
+  colorNeutralBackground3: '#272219',
+  colorNeutralBackgroundDisabled: '#201c15',
+  colorSubtleBackgroundHover: '#2a251c',
+  colorSubtleBackgroundPressed: '#211d16',
+  colorNeutralStroke1: '#5b4f3a',
+  colorNeutralStroke2: '#3f372a',
+  colorNeutralForeground1: '#efe6d4',
+};
 
 export const skins: Record<SkinId, SkinDefinition> = {
   default: {
@@ -178,44 +302,68 @@ export const skins: Record<SkinId, SkinDefinition> = {
     id: 'retro',
     label: 'Retro',
     description: 'Windows XP / 7 throwback.',
-    light: withIdentity(createLightTheme(retroBrand), retroFontFamily, retroRadii),
-    dark: withIdentity(createDarkTheme(retroBrand), retroFontFamily, retroRadii),
+    light: applySkin(
+      createLightTheme(retroBrand),
+      retroFontFamily,
+      retroRadii,
+      retroLightNeutrals,
+    ),
+    dark: applySkin(
+      createDarkTheme(retroBrand),
+      retroFontFamily,
+      retroRadii,
+      retroDarkNeutrals,
+    ),
   },
   gaming: {
     id: 'gaming',
     label: '8-bit',
     description: 'Neon arcade / pixel art.',
-    light: withIdentity(createLightTheme(gamingBrand), gamingFontFamily, gamingRadii),
-    dark: withIdentity(createDarkTheme(gamingBrand), gamingFontFamily, gamingRadii),
+    light: applySkin(
+      createLightTheme(gamingBrand),
+      gamingFontFamily,
+      gamingRadii,
+      gamingLightNeutrals,
+    ),
+    dark: applySkin(
+      createDarkTheme(gamingBrand),
+      gamingFontFamily,
+      gamingRadii,
+      gamingDarkNeutrals,
+    ),
   },
   synthwave: {
     id: 'synthwave',
     label: 'Synthwave',
     description: 'Neon 80s retro-future.',
-    light: withIdentity(
+    light: applySkin(
       createLightTheme(synthwaveBrand),
       synthwaveFontFamily,
       synthwaveRadii,
+      synthwaveLightNeutrals,
     ),
-    dark: withIdentity(
+    dark: applySkin(
       createDarkTheme(synthwaveBrand),
       synthwaveFontFamily,
       synthwaveRadii,
+      synthwaveDarkNeutrals,
     ),
   },
   newsprint: {
     id: 'newsprint',
     label: 'Newsprint',
     description: 'Classic broadsheet print.',
-    light: withIdentity(
+    light: applySkin(
       createLightTheme(newsprintBrand),
       newsprintFontFamily,
       newsprintRadii,
+      newsprintLightNeutrals,
     ),
-    dark: withIdentity(
+    dark: applySkin(
       createDarkTheme(newsprintBrand),
       newsprintFontFamily,
       newsprintRadii,
+      newsprintDarkNeutrals,
     ),
   },
 };

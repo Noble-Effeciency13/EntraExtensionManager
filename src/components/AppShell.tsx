@@ -273,7 +273,7 @@ export function AppShell({
   });
 
   return (
-    <div className={styles.root}>
+    <div className={styles.root} data-app-shell>
       <header className={styles.topbar}>
         <div className={styles.brand}>
           <div className={styles.brandMark}>

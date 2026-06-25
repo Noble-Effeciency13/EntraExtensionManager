@@ -54,6 +54,13 @@ async function bootstrap() {
     }
   });
 
+  // Reflect the persisted skin + mode before first paint so a skinned session
+  // doesn't flash the default chrome while React mounts.
+  const storedSkin = localStorage.getItem('eem.skin');
+  if (storedSkin) document.body.dataset.skin = storedSkin;
+  const storedThemeMode = localStorage.getItem('eem.theme');
+  if (storedThemeMode) document.body.dataset.themeMode = storedThemeMode;
+
   ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>
       <MsalProvider instance={msalInstance}>

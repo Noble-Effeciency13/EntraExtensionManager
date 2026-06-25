@@ -28,6 +28,7 @@ export function App() {
 
   useEffect(() => {
     localStorage.setItem(THEME_KEY, theme);
+    document.body.dataset.themeMode = theme;
   }, [theme]);
 
   useEffect(() => {

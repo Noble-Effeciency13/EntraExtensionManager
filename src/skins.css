@@ -1,133 +1,369 @@
-/* Portal skin flourishes.
+/* Portal skin overhauls.
  *
- * The active skin id is written to `<body data-skin="...">` by App.tsx, while
- * the Fluent design tokens (brand ramp, base font, corner radius) are swapped
- * through the FluentProvider theme. These rules layer on each skin's signature
- * decorations that tokens alone can't express.
+ * App.tsx reflects the active skin + light/dark mode onto <body> as
+ * `data-skin` / `data-theme-mode`, and the FluentProvider theme swaps the full
+ * token palette (brand ramp, neutrals, font, radius) — see src/theme/skins.ts.
+ * These rules add the heavy decorative layer that tokens can't express:
+ * full-canvas motifs, reskinned chrome, buttons, inputs, scrollbars and
+ * selection.
  *
- * Selectors intentionally lean on stable elements (`header`, `nav[aria-label]`)
- * and Fluent's own CSS token variables (e.g. `var(--colorBrandBackground)`) so
- * the decorations track the current light/dark theme automatically. Token vars
- * resolve because these elements live inside the FluentProvider root; body-level
- * rules only use literal values. */
+ * Hooks used:
+ *   - `[data-app-shell]`         the AppShell grid; its background shows through
+ *                                the transparent <main>, so it hosts the motif.
+ *   - `header` / `nav` / `footer` / `main`  stable layout landmarks.
+ *   - Fluent token vars (e.g. var(--colorBrandBackground)) so chrome tracks the
+ *     current light/dark theme automatically.
+ * Animations are gated behind `prefers-reduced-motion: no-preference`. */
 
-/* ============================ Retro (Windows XP / 7) ====================== */
+/* ========================================================================== */
+/* Retro — Windows XP / 7: Aero glass over a soft "Bliss" sky.                 */
+/* ========================================================================== */
 body[data-skin='retro'] {
   font-family: 'Tahoma', 'Segoe UI', 'Geneva', 'Verdana', sans-serif;
+  scrollbar-color: #2f6fdf #d4e4f7;
 }
 
-/* Glossy "title bar" chrome with a soft top highlight and an azure underline. */
-body[data-skin='retro'] header {
+/* Sky-to-hill desktop wallpaper behind the content. */
+body[data-skin='retro'] [data-app-shell] {
+  background-color: #d8e4f5;
+  background-image: linear-gradient(
+    180deg,
+    #cfe0f5 0%,
+    #dde8f4 48%,
+    #e8eede 76%,
+    #cfe3a8 100%
+  );
+}
+body[data-skin='retro'][data-theme-mode='dark'] [data-app-shell] {
+  background-color: #0e1a2e;
+  background-image: linear-gradient(180deg, #0b1730 0%, #122444 60%, #163a3a 100%);
+}
+
+/* Frosted Aero title bar + rail + footer. */
+body[data-skin='retro'] header,
+body[data-skin='retro'] nav[aria-label='Primary'],
+body[data-skin='retro'] footer {
+  background-color: rgba(255, 255, 255, 0.72);
   background-image: linear-gradient(
     to bottom,
-    var(--colorNeutralBackground1) 0%,
-    var(--colorNeutralBackground3) 100%
+    rgba(255, 255, 255, 0.85),
+    rgba(222, 236, 252, 0.62)
   );
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(10px) saturate(1.3);
+  -webkit-backdrop-filter: blur(10px) saturate(1.3);
+}
+body[data-skin='retro'][data-theme-mode='dark'] header,
+body[data-skin='retro'][data-theme-mode='dark'] nav[aria-label='Primary'],
+body[data-skin='retro'][data-theme-mode='dark'] footer {
+  background-color: rgba(18, 32, 56, 0.72);
+  background-image: linear-gradient(
+    to bottom,
+    rgba(28, 46, 74, 0.82),
+    rgba(14, 26, 46, 0.66)
+  );
+}
+body[data-skin='retro'] header {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
   border-bottom: 1px solid var(--colorBrandStroke1);
 }
-
 body[data-skin='retro'] nav[aria-label='Primary'] {
+  border-right: 1px solid var(--colorBrandStroke2);
+}
+
+/* Glassy "gel" buttons à la Luna/Aero — a sheen layered over the token fill. */
+body[data-skin='retro'] main button {
   background-image: linear-gradient(
-    to right,
-    var(--colorNeutralBackground1) 0%,
-    var(--colorNeutralBackground2) 100%
+    to bottom,
+    rgba(255, 255, 255, 0.55) 0%,
+    rgba(255, 255, 255, 0.12) 48%,
+    rgba(0, 0, 0, 0.04) 52%,
+    rgba(255, 255, 255, 0.18) 100%
   );
 }
 
-/* ================================ 8-bit (Gaming) ========================== */
+/* Sunken classic fields. */
+body[data-skin='retro'] input,
+body[data-skin='retro'] textarea {
+  box-shadow: inset 1px 1px 2px rgba(0, 0, 0, 0.18);
+}
+
+body[data-skin='retro'] ::selection {
+  background: #3399ff;
+  color: #fff;
+}
+body[data-skin='retro'] ::-webkit-scrollbar {
+  width: 14px;
+  height: 14px;
+}
+body[data-skin='retro'] ::-webkit-scrollbar-track {
+  background: #d4e4f7;
+}
+body[data-skin='retro'][data-theme-mode='dark'] ::-webkit-scrollbar-track {
+  background: #0e1a2e;
+}
+body[data-skin='retro'] ::-webkit-scrollbar-thumb {
+  background-image: linear-gradient(to right, #6aa0e6, #2f6fdf);
+  border: 1px solid #2358b0;
+  border-radius: 3px;
+}
+
+/* ========================================================================== */
+/* 8-bit — Game Boy LCD by day, arcade CRT by night.                          */
+/* ========================================================================== */
 body[data-skin='gaming'] {
   font-family: 'Lucida Console', 'Consolas', 'Courier New', monospace;
+  scrollbar-color: #16c04f #0e2614;
 }
 
-/* Arcade cabinet bar: neon underline, soft glow, faint CRT scanlines. */
+/* Pixel grid + CRT scanlines across the whole canvas. */
+body[data-skin='gaming'] [data-app-shell] {
+  background-color: var(--colorNeutralBackground2);
+  background-image:
+    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.07) 0 2px, transparent 2px 4px),
+    repeating-linear-gradient(90deg, rgba(80, 110, 60, 0.06) 0 1px, transparent 1px 18px),
+    repeating-linear-gradient(0deg, rgba(80, 110, 60, 0.06) 0 1px, transparent 1px 18px);
+}
+body[data-skin='gaming'][data-theme-mode='dark'] [data-app-shell] {
+  background-image:
+    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.32) 0 2px, transparent 2px 4px),
+    repeating-linear-gradient(90deg, rgba(57, 217, 79, 0.07) 0 1px, transparent 1px 18px),
+    repeating-linear-gradient(0deg, rgba(57, 217, 79, 0.07) 0 1px, transparent 1px 18px);
+}
+
+/* Hard pixel chrome — solid borders, no blur. */
 body[data-skin='gaming'] header {
-  border-bottom: 2px solid var(--colorBrandBackground);
-  box-shadow:
-    0 2px 0 0 var(--colorBrandStroke2),
-    0 6px 16px -8px var(--colorBrandBackground);
-  background-image: repeating-linear-gradient(
-    0deg,
-    rgba(127, 127, 127, 0.06) 0,
-    rgba(127, 127, 127, 0.06) 1px,
-    transparent 1px,
-    transparent 3px
-  );
+  border-bottom: 3px solid var(--colorBrandBackground);
+  box-shadow: 0 3px 0 0 rgba(0, 0, 0, 0.5);
 }
-
-/* Blocky, uppercase navigation labels for that ROM-menu energy. */
+body[data-skin='gaming'] nav[aria-label='Primary'] {
+  border-right: 3px solid var(--colorNeutralStroke1);
+}
 body[data-skin='gaming'] nav[aria-label='Primary'] a > span {
   text-transform: uppercase;
   letter-spacing: 0.08em;
   font-size: 12px;
 }
 
-/* Crisp neon focus ring across interactive elements. */
+/* Chunky arcade buttons with a hard drop shadow that depresses on click. */
+body[data-skin='gaming'] main button {
+  box-shadow:
+    0 0 0 2px var(--colorNeutralStroke1),
+    4px 4px 0 0 rgba(0, 0, 0, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+body[data-skin='gaming'] main button:active {
+  transform: translate(2px, 2px);
+  box-shadow:
+    0 0 0 2px var(--colorNeutralStroke1),
+    2px 2px 0 0 rgba(0, 0, 0, 0.5);
+}
+body[data-skin='gaming'] input,
+body[data-skin='gaming'] textarea {
+  box-shadow: inset 2px 2px 0 rgba(0, 0, 0, 0.18);
+}
+
 body[data-skin='gaming'] *:focus-visible {
   outline: 2px solid var(--colorBrandStroke1);
   outline-offset: 1px;
 }
+body[data-skin='gaming'] ::selection {
+  background: var(--colorBrandBackground);
+  color: #00160a;
+}
+body[data-skin='gaming'] ::-webkit-scrollbar {
+  width: 14px;
+  height: 14px;
+}
+body[data-skin='gaming'] ::-webkit-scrollbar-track {
+  background: var(--colorNeutralBackground3);
+}
+body[data-skin='gaming'] ::-webkit-scrollbar-thumb {
+  background: var(--colorBrandBackground);
+  border: 2px solid var(--colorNeutralBackground2);
+}
 
-/* ============================== Synthwave (Neon 80s) ===================== */
+@media (prefers-reduced-motion: no-preference) {
+  body[data-skin='gaming'] [data-app-shell] {
+    animation: eem-crt-roll 8s linear infinite;
+  }
+  @keyframes eem-crt-roll {
+    from {
+      background-position: 0 0, 0 0, 0 0;
+    }
+    to {
+      background-position: 0 4px, 0 0, 0 0;
+    }
+  }
+}
+
+/* ========================================================================== */
+/* Synthwave — neon grid, glowing horizon, frosted dark glass.                */
+/* ========================================================================== */
 body[data-skin='synthwave'] {
   font-family: 'Century Gothic', 'Futura', 'Trebuchet MS', 'Segoe UI', sans-serif;
+  scrollbar-color: #c81b96 #281b44;
 }
 
-/* Indigo-to-magenta-to-cyan horizon with a glowing magenta underline. */
+/* Perspective-free neon grid with a magenta sun glow on the horizon. */
+body[data-skin='synthwave'] [data-app-shell] {
+  background-color: var(--colorNeutralBackground2);
+  background-image:
+    radial-gradient(
+      120% 90% at 50% 118%,
+      rgba(255, 79, 184, 0.35),
+      rgba(255, 79, 184, 0) 55%
+    ),
+    repeating-linear-gradient(90deg, rgba(120, 80, 255, 0.1) 0 1px, transparent 1px 40px),
+    repeating-linear-gradient(0deg, rgba(0, 229, 255, 0.08) 0 1px, transparent 1px 40px);
+}
+body[data-skin='synthwave'][data-theme-mode='light'] [data-app-shell] {
+  background-image:
+    radial-gradient(
+      120% 90% at 50% 118%,
+      rgba(255, 79, 184, 0.18),
+      rgba(255, 79, 184, 0) 55%
+    ),
+    repeating-linear-gradient(90deg, rgba(150, 90, 230, 0.08) 0 1px, transparent 1px 40px),
+    repeating-linear-gradient(0deg, rgba(80, 160, 230, 0.07) 0 1px, transparent 1px 40px);
+}
+
+/* Frosted glass chrome with a glowing magenta underline. */
 body[data-skin='synthwave'] header {
+  background-color: rgba(36, 26, 58, 0.66);
   background-image: linear-gradient(
     120deg,
-    rgba(99, 13, 73, 0.2) 0%,
-    rgba(40, 10, 80, 0.14) 50%,
-    rgba(13, 92, 120, 0.18) 100%
+    rgba(40, 20, 70, 0.7),
+    rgba(20, 12, 40, 0.6)
   );
+  backdrop-filter: blur(8px) saturate(1.3);
+  -webkit-backdrop-filter: blur(8px) saturate(1.3);
   border-bottom: 2px solid var(--colorBrandBackground);
-  box-shadow:
-    0 1px 0 0 var(--colorBrandStroke2),
-    0 8px 22px -10px var(--colorBrandBackground);
+  box-shadow: 0 0 18px -4px var(--colorBrandBackground);
 }
-
-/* Subtle neon wash over the content canvas. */
-body[data-skin='synthwave'] main {
+body[data-skin='synthwave'] nav[aria-label='Primary'] {
+  background-color: rgba(36, 26, 58, 0.55);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-right: 1px solid var(--colorBrandStroke2);
+}
+body[data-skin='synthwave'][data-theme-mode='light'] header {
+  background-color: rgba(255, 255, 255, 0.66);
   background-image: linear-gradient(
-    180deg,
-    rgba(120, 30, 120, 0.05) 0%,
-    rgba(30, 30, 90, 0.05) 100%
+    120deg,
+    rgba(255, 255, 255, 0.72),
+    rgba(245, 235, 255, 0.6)
   );
 }
-
+body[data-skin='synthwave'][data-theme-mode='light'] nav[aria-label='Primary'] {
+  background-color: rgba(255, 255, 255, 0.55);
+}
 body[data-skin='synthwave'] nav[aria-label='Primary'] a > span {
   letter-spacing: 0.04em;
+}
+
+/* Neon bloom on hover. */
+body[data-skin='synthwave'] button:hover {
+  box-shadow:
+    0 0 0 1px var(--colorBrandStroke1),
+    0 0 14px -2px var(--colorBrandBackground);
 }
 
 body[data-skin='synthwave'] *:focus-visible {
   outline: 2px solid var(--colorBrandStroke1);
   outline-offset: 1px;
 }
+body[data-skin='synthwave'] ::selection {
+  background: var(--colorBrandBackground);
+  color: #fff;
+}
+body[data-skin='synthwave'] ::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+body[data-skin='synthwave'] ::-webkit-scrollbar-track {
+  background: rgba(120, 80, 255, 0.12);
+}
+body[data-skin='synthwave'] ::-webkit-scrollbar-thumb {
+  background-image: linear-gradient(var(--colorBrandBackground), #00e5ff);
+  border-radius: 8px;
+}
 
-/* ============================ Newsprint (Broadsheet) ===================== */
+@media (prefers-reduced-motion: no-preference) {
+  body[data-skin='synthwave'] [data-app-shell] {
+    animation: eem-grid-scroll 14s linear infinite;
+  }
+  @keyframes eem-grid-scroll {
+    from {
+      background-position: 0 0, 0 0, 0 0;
+    }
+    to {
+      background-position: 0 0, 0 0, 0 40px;
+    }
+  }
+}
+
+/* ========================================================================== */
+/* Newsprint — aged paper, halftone dots, inky double rules.                  */
+/* ========================================================================== */
 body[data-skin='newsprint'] {
   font-family: 'Georgia', 'Times New Roman', 'Times', serif;
+  scrollbar-color: #8a7a55 #e7ddc7;
 }
 
-/* Masthead chrome: a warm paper tint capped by a classic double rule. */
+/* Halftone dots + paper fibres washed over the canvas. */
+body[data-skin='newsprint'] [data-app-shell] {
+  background-color: var(--colorNeutralBackground2);
+  background-image:
+    radial-gradient(rgba(60, 45, 25, 0.05) 1px, transparent 1.4px),
+    repeating-linear-gradient(0deg, rgba(80, 60, 30, 0.035) 0 2px, transparent 2px 4px);
+  background-size:
+    6px 6px,
+    auto;
+}
+body[data-skin='newsprint'][data-theme-mode='dark'] [data-app-shell] {
+  background-image:
+    radial-gradient(rgba(255, 240, 210, 0.04) 1px, transparent 1.4px),
+    repeating-linear-gradient(0deg, rgba(255, 240, 210, 0.025) 0 2px, transparent 2px 4px);
+  background-size:
+    6px 6px,
+    auto;
+}
+
+/* Masthead double rule + a nav column rule, like a printed page. */
 body[data-skin='newsprint'] header {
-  background-image: linear-gradient(
-    rgba(120, 80, 40, 0.06),
-    rgba(120, 80, 40, 0.06)
-  );
-  border-bottom: 3px double var(--colorNeutralForeground1);
+  border-bottom: 4px double var(--colorNeutralForeground1);
+  box-shadow: 0 2px 0 0 var(--colorNeutralForeground1);
 }
-
-/* Column rule between the nav rail and the page, like newspaper columns. */
 body[data-skin='newsprint'] nav[aria-label='Primary'] {
-  border-right: 1px solid var(--colorNeutralForeground3);
+  border-right: 2px solid var(--colorNeutralForeground1);
+}
+body[data-skin='newsprint'] nav[aria-label='Primary'] a > span {
+  font-variant: small-caps;
+  letter-spacing: 0.03em;
 }
 
-/* Faint aged-paper wash over the content canvas. */
-body[data-skin='newsprint'] main {
-  background-image: linear-gradient(
-    rgba(150, 110, 60, 0.05),
-    rgba(150, 110, 60, 0.05)
-  );
+/* Inked outlines on controls; ledger-style underlines on fields. */
+body[data-skin='newsprint'] main button {
+  box-shadow: 0 0 0 1px var(--colorNeutralStroke1);
+}
+body[data-skin='newsprint'] input,
+body[data-skin='newsprint'] textarea {
+  box-shadow: inset 0 -1px 0 var(--colorNeutralStroke1);
+}
+
+body[data-skin='newsprint'] ::selection {
+  background: #2b2117;
+  color: #f3ead6;
+}
+body[data-skin='newsprint'] ::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+body[data-skin='newsprint'] ::-webkit-scrollbar-track {
+  background: var(--colorNeutralBackground3);
+}
+body[data-skin='newsprint'] ::-webkit-scrollbar-thumb {
+  background: var(--colorNeutralStroke1);
+  border: 2px solid var(--colorNeutralBackground2);
 }
