@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  allowedPropertyTypesForTargets,
   directoryExtensionFormSchema,
   schemaExtensionFormSchema,
 } from './extensions';
@@ -31,6 +32,48 @@ describe('schemaExtensionFormSchema', () => {
       properties: [{ name: '1bad', type: 'String' }],
     });
     expect(result.success).toBe(false);
+  });
+
+  it('requires a description', () => {
+    const result = schemaExtensionFormSchema.safeParse({
+      id: 'courses',
+      description: '',
+      targetTypes: ['User'],
+      properties: [{ name: 'courseId', type: 'String' }],
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects Binary properties on messaging target types', () => {
+    const result = schemaExtensionFormSchema.safeParse({
+      id: 'courses',
+      description: 'Course catalog',
+      targetTypes: ['Message'],
+      properties: [{ name: 'blob', type: 'Binary' }],
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('allows Binary properties on directory target types', () => {
+    const result = schemaExtensionFormSchema.safeParse({
+      id: 'courses',
+      description: 'Course catalog',
+      targetTypes: ['User', 'Group'],
+      properties: [{ name: 'blob', type: 'Binary' }],
+    });
+    expect(result.success).toBe(true);
+  });
+});
+
+describe('allowedPropertyTypesForTargets', () => {
+  it('excludes Binary when a messaging target is selected', () => {
+    expect(allowedPropertyTypesForTargets(['User', 'Message'])).not.toContain(
+      'Binary',
+    );
+  });
+
+  it('includes Binary for directory-only targets', () => {
+    expect(allowedPropertyTypesForTargets(['User', 'Group'])).toContain('Binary');
   });
 });
 

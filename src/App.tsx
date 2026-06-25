@@ -1,36 +1,51 @@
 import { useEffect, useState } from 'react';
-import {
-  FluentProvider,
-  webLightTheme,
-  webDarkTheme,
-  Toaster,
-} from '@fluentui/react-components';
+import { FluentProvider, Toaster } from '@fluentui/react-components';
 import { AuthGate } from '@/auth/AuthGate';
 import { AppShell } from '@/components/AppShell';
 import { AppRoutes } from '@/router';
 import { TOASTER_ID } from '@/components/toast';
-
-type ThemeMode = 'light' | 'dark';
+import {
+  DEFAULT_SKIN,
+  isSkinId,
+  resolveTheme,
+  type SkinId,
+  type ThemeMode,
+} from '@/theme/skins';
 
 const THEME_KEY = 'eem.theme';
+const SKIN_KEY = 'eem.skin';
 
 export function App() {
   const [theme, setTheme] = useState<ThemeMode>(() => {
-    const stored = localStorage.getItem(THEME_KEY) as ThemeMode | null;
-    if (stored) return stored;
+    const stored = localStorage.getItem(THEME_KEY);
+    if (stored === 'light' || stored === 'dark') return stored;
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  });
+  const [skin, setSkin] = useState<SkinId>(() => {
+    const stored = localStorage.getItem(SKIN_KEY);
+    return isSkinId(stored) ? stored : DEFAULT_SKIN;
   });
 
   useEffect(() => {
     localStorage.setItem(THEME_KEY, theme);
   }, [theme]);
 
+  useEffect(() => {
+    localStorage.setItem(SKIN_KEY, skin);
+    document.body.dataset.skin = skin;
+  }, [skin]);
+
   const toggleTheme = () => setTheme((t) => (t === 'light' ? 'dark' : 'light'));
 
   return (
-    <FluentProvider theme={theme === 'dark' ? webDarkTheme : webLightTheme}>
+    <FluentProvider theme={resolveTheme(skin, theme)}>
       <AuthGate>
-        <AppShell theme={theme} onToggleTheme={toggleTheme}>
+        <AppShell
+          theme={theme}
+          onToggleTheme={toggleTheme}
+          skin={skin}
+          onSkinChange={setSkin}
+        >
           <AppRoutes />
         </AppShell>
       </AuthGate>

@@ -1,0 +1,133 @@
+/* Portal skin flourishes.
+ *
+ * The active skin id is written to `<body data-skin="...">` by App.tsx, while
+ * the Fluent design tokens (brand ramp, base font, corner radius) are swapped
+ * through the FluentProvider theme. These rules layer on each skin's signature
+ * decorations that tokens alone can't express.
+ *
+ * Selectors intentionally lean on stable elements (`header`, `nav[aria-label]`)
+ * and Fluent's own CSS token variables (e.g. `var(--colorBrandBackground)`) so
+ * the decorations track the current light/dark theme automatically. Token vars
+ * resolve because these elements live inside the FluentProvider root; body-level
+ * rules only use literal values. */
+
+/* ============================ Retro (Windows XP / 7) ====================== */
+body[data-skin='retro'] {
+  font-family: 'Tahoma', 'Segoe UI', 'Geneva', 'Verdana', sans-serif;
+}
+
+/* Glossy "title bar" chrome with a soft top highlight and an azure underline. */
+body[data-skin='retro'] header {
+  background-image: linear-gradient(
+    to bottom,
+    var(--colorNeutralBackground1) 0%,
+    var(--colorNeutralBackground3) 100%
+  );
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
+  border-bottom: 1px solid var(--colorBrandStroke1);
+}
+
+body[data-skin='retro'] nav[aria-label='Primary'] {
+  background-image: linear-gradient(
+    to right,
+    var(--colorNeutralBackground1) 0%,
+    var(--colorNeutralBackground2) 100%
+  );
+}
+
+/* ================================ 8-bit (Gaming) ========================== */
+body[data-skin='gaming'] {
+  font-family: 'Lucida Console', 'Consolas', 'Courier New', monospace;
+}
+
+/* Arcade cabinet bar: neon underline, soft glow, faint CRT scanlines. */
+body[data-skin='gaming'] header {
+  border-bottom: 2px solid var(--colorBrandBackground);
+  box-shadow:
+    0 2px 0 0 var(--colorBrandStroke2),
+    0 6px 16px -8px var(--colorBrandBackground);
+  background-image: repeating-linear-gradient(
+    0deg,
+    rgba(127, 127, 127, 0.06) 0,
+    rgba(127, 127, 127, 0.06) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+}
+
+/* Blocky, uppercase navigation labels for that ROM-menu energy. */
+body[data-skin='gaming'] nav[aria-label='Primary'] a > span {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 12px;
+}
+
+/* Crisp neon focus ring across interactive elements. */
+body[data-skin='gaming'] *:focus-visible {
+  outline: 2px solid var(--colorBrandStroke1);
+  outline-offset: 1px;
+}
+
+/* ============================== Synthwave (Neon 80s) ===================== */
+body[data-skin='synthwave'] {
+  font-family: 'Century Gothic', 'Futura', 'Trebuchet MS', 'Segoe UI', sans-serif;
+}
+
+/* Indigo-to-magenta-to-cyan horizon with a glowing magenta underline. */
+body[data-skin='synthwave'] header {
+  background-image: linear-gradient(
+    120deg,
+    rgba(99, 13, 73, 0.2) 0%,
+    rgba(40, 10, 80, 0.14) 50%,
+    rgba(13, 92, 120, 0.18) 100%
+  );
+  border-bottom: 2px solid var(--colorBrandBackground);
+  box-shadow:
+    0 1px 0 0 var(--colorBrandStroke2),
+    0 8px 22px -10px var(--colorBrandBackground);
+}
+
+/* Subtle neon wash over the content canvas. */
+body[data-skin='synthwave'] main {
+  background-image: linear-gradient(
+    180deg,
+    rgba(120, 30, 120, 0.05) 0%,
+    rgba(30, 30, 90, 0.05) 100%
+  );
+}
+
+body[data-skin='synthwave'] nav[aria-label='Primary'] a > span {
+  letter-spacing: 0.04em;
+}
+
+body[data-skin='synthwave'] *:focus-visible {
+  outline: 2px solid var(--colorBrandStroke1);
+  outline-offset: 1px;
+}
+
+/* ============================ Newsprint (Broadsheet) ===================== */
+body[data-skin='newsprint'] {
+  font-family: 'Georgia', 'Times New Roman', 'Times', serif;
+}
+
+/* Masthead chrome: a warm paper tint capped by a classic double rule. */
+body[data-skin='newsprint'] header {
+  background-image: linear-gradient(
+    rgba(120, 80, 40, 0.06),
+    rgba(120, 80, 40, 0.06)
+  );
+  border-bottom: 3px double var(--colorNeutralForeground1);
+}
+
+/* Column rule between the nav rail and the page, like newspaper columns. */
+body[data-skin='newsprint'] nav[aria-label='Primary'] {
+  border-right: 1px solid var(--colorNeutralForeground3);
+}
+
+/* Faint aged-paper wash over the content canvas. */
+body[data-skin='newsprint'] main {
+  background-image: linear-gradient(
+    rgba(150, 110, 60, 0.05),
+    rgba(150, 110, 60, 0.05)
+  );
+}

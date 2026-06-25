@@ -27,6 +27,63 @@ export const schemaExtensionTargetTypeValues = [
   'Post',
   'Message',
 ] as const;
+export type SchemaExtensionTargetType =
+  (typeof schemaExtensionTargetTypeValues)[number];
+
+/**
+ * Outlook / messaging resource types. Microsoft Graph rejects the `Binary`
+ * property type on these — `Binary` is only valid on directory objects
+ * (User, Group, Device, Organization, AdministrativeUnit). Creating such a
+ * combination fails server-side, so the editor filters it out up front.
+ * Compared case-insensitively because Graph accepts both `Message` and
+ * `message`.
+ */
+export const schemaMessagingTargetTypes = [
+  'Contact',
+  'Event',
+  'Message',
+  'Post',
+] as const;
+
+/** Property types that can't be combined with the listed target types. */
+const schemaPropertyTypeTargetRestrictions: Partial<
+  Record<SchemaPropertyType, readonly string[]>
+> = {
+  Binary: schemaMessagingTargetTypes,
+};
+
+const normalizeTargetType = (value: string) => value.trim().toLowerCase();
+
+/**
+ * The selected target types that are incompatible with the given property
+ * type. Empty when the combination is valid.
+ */
+export function incompatibleTargetsForPropertyType(
+  type: SchemaPropertyType,
+  targetTypes: readonly string[],
+): string[] {
+  const blocked = schemaPropertyTypeTargetRestrictions[type];
+  if (!blocked) return [];
+  const blockedSet = new Set(blocked.map(normalizeTargetType));
+  return targetTypes.filter((t) => blockedSet.has(normalizeTargetType(t)));
+}
+
+/** True when `type` is valid for every selected target type. */
+export function isPropertyTypeCompatible(
+  type: SchemaPropertyType,
+  targetTypes: readonly string[],
+): boolean {
+  return incompatibleTargetsForPropertyType(type, targetTypes).length === 0;
+}
+
+/** Property types valid for *all* currently selected target types. */
+export function allowedPropertyTypesForTargets(
+  targetTypes: readonly string[],
+): SchemaPropertyType[] {
+  return schemaPropertyTypeValues.filter((type) =>
+    isPropertyTypeCompatible(type, targetTypes),
+  );
+}
 
 export const schemaExtensionPropertySchema = z.object({
   name: z
@@ -38,21 +95,40 @@ export const schemaExtensionPropertySchema = z.object({
 });
 export type SchemaExtensionProperty = z.infer<typeof schemaExtensionPropertySchema>;
 
-export const schemaExtensionFormSchema = z.object({
-  id: z
-    .string()
-    .min(1, 'Id is required')
-    .max(100, 'Max 100 characters')
-    .regex(/^[A-Za-z0-9_]+$/, 'Letters, digits, underscore only'),
-  description: z.string().max(1024).optional().default(''),
-  targetTypes: z
-    .array(z.string().min(1))
-    .min(1, 'Select at least one target type'),
-  properties: z
-    .array(schemaExtensionPropertySchema)
-    .min(1, 'Add at least one property'),
-  owner: z.string().optional(),
-});
+export const schemaExtensionFormSchema = z
+  .object({
+    id: z
+      .string()
+      .min(1, 'Id is required')
+      .max(100, 'Max 100 characters')
+      .regex(/^[A-Za-z0-9_]+$/, 'Letters, digits, underscore only'),
+    description: z
+      .string()
+      .min(1, 'Description is required')
+      .max(1024, 'Max 1024 characters'),
+    targetTypes: z
+      .array(z.string().min(1))
+      .min(1, 'Select at least one target type'),
+    properties: z
+      .array(schemaExtensionPropertySchema)
+      .min(1, 'Add at least one property'),
+    owner: z.string().optional(),
+  })
+  .superRefine((value, ctx) => {
+    value.properties.forEach((property, index) => {
+      const blocking = incompatibleTargetsForPropertyType(
+        property.type,
+        value.targetTypes,
+      );
+      if (blocking.length > 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['properties', index, 'type'],
+          message: `${property.type} isn't supported for ${blocking.join(', ')}.`,
+        });
+      }
+    });
+  });
 export type SchemaExtensionForm = z.infer<typeof schemaExtensionFormSchema>;
 
 export interface SchemaExtension {

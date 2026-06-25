@@ -8,6 +8,7 @@ import { msalConfig } from '@/auth/msalConfig';
 import { ModeProvider } from '@/auth/mode';
 import { App } from '@/App';
 import '@/global-overrides.css';
+import '@/skins.css';
 
 const msalInstance = new PublicClientApplication(msalConfig);
 

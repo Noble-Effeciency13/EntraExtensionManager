@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Controller, useFieldArray, useForm } from 'react-hook-form';
+import { Controller, useFieldArray, useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Button,
@@ -21,9 +21,10 @@ import {
 } from '@fluentui/react-components';
 import { Add20Regular, Delete20Regular } from '@fluentui/react-icons';
 import {
+  allowedPropertyTypesForTargets,
+  incompatibleTargetsForPropertyType,
   schemaExtensionFormSchema,
   schemaExtensionTargetTypeValues,
-  schemaPropertyTypeValues,
   type AppRegistration,
   type SchemaExtension,
   type SchemaExtensionForm,
@@ -104,6 +105,17 @@ export function SchemaExtensionEditor({ open, onOpenChange, existing }: Props) {
   const { fields, append, remove } = useFieldArray({ control, name: 'properties' });
 
   const [ownerApp, setOwnerApp] = useState<AppRegistration | undefined>(undefined);
+
+  // Watch the selected target types so the property Type dropdowns can hide
+  // options that Microsoft Graph would reject for the chosen targets (e.g.
+  // Binary on a Message/Event/Post target).
+  const selectedTargetTypes = (useWatch({ control, name: 'targetTypes' }) ??
+    []) as string[];
+  const allowedPropertyTypes = allowedPropertyTypesForTargets(selectedTargetTypes);
+  const binaryBlockers = incompatibleTargetsForPropertyType(
+    'Binary',
+    selectedTargetTypes,
+  );
 
   useEffect(() => {
     if (open) {
@@ -186,6 +198,7 @@ export function SchemaExtensionEditor({ open, onOpenChange, existing }: Props) {
 
               <Field
                 label="Description"
+                required
                 validationMessage={errors.description?.message}
                 validationState={errors.description ? 'error' : undefined}
               >
@@ -250,6 +263,16 @@ export function SchemaExtensionEditor({ open, onOpenChange, existing }: Props) {
 
               <div className={styles.propsList}>
                 <strong>Properties</strong>
+                {binaryBlockers.length > 0 && (
+                  <MessageBar intent="info">
+                    <MessageBarBody>
+                      <strong>Binary</strong> isn't available because{' '}
+                      {binaryBlockers.join(', ')} {binaryBlockers.length > 1 ? 'are' : 'is'}{' '}
+                      selected. Binary properties are only valid on directory
+                      objects (User, Group, Device, Organization).
+                    </MessageBarBody>
+                  </MessageBar>
+                )}
                 {fields.map((f, idx) => (
                   <div key={f.id} className={styles.propRow}>
                     <Field
@@ -271,6 +294,10 @@ export function SchemaExtensionEditor({ open, onOpenChange, existing }: Props) {
                         <Field
                           className={styles.cell}
                           label={idx === 0 ? 'Type' : undefined}
+                          validationMessage={errors.properties?.[idx]?.type?.message}
+                          validationState={
+                            errors.properties?.[idx]?.type ? 'error' : undefined
+                          }
                         >
                           <Dropdown
                             disabled={isLocked}
@@ -280,7 +307,7 @@ export function SchemaExtensionEditor({ open, onOpenChange, existing }: Props) {
                               field.onChange(d.optionValue ?? field.value)
                             }
                           >
-                            {schemaPropertyTypeValues.map((t) => (
+                            {allowedPropertyTypes.map((t) => (
                               <Option key={t} value={t}>
                                 {t}
                               </Option>

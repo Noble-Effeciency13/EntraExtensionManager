@@ -37,6 +37,7 @@ import {
   Beaker24Regular,
   ClipboardCode24Regular,
   Code24Regular,
+  PaintBrush24Regular,
 } from '@fluentui/react-icons';
 import { useMode } from '@/auth/mode';
 import { useAppToast } from '@/hooks/useAppToast';
@@ -45,6 +46,7 @@ import { AppFooter } from '@/components/AppFooter';
 import { BrandLogo } from '@/components/BrandLogo';
 import { useGlobalKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { TenantSwitcher } from '@/components/TenantSwitcher';
+import { isSkinId, skinList, type SkinId } from '@/theme/skins';
 
 const useStyles = makeStyles({
   root: {
@@ -201,9 +203,17 @@ interface AppShellProps {
   children: ReactNode;
   theme: 'light' | 'dark';
   onToggleTheme: () => void;
+  skin: SkinId;
+  onSkinChange: (skin: SkinId) => void;
 }
 
-export function AppShell({ children, theme, onToggleTheme }: AppShellProps) {
+export function AppShell({
+  children,
+  theme,
+  onToggleTheme,
+  skin,
+  onSkinChange,
+}: AppShellProps) {
   const styles = useStyles();
   const { instance, accounts } = useMsal();
   const account = instance.getActiveAccount() ?? accounts[0];
@@ -315,6 +325,37 @@ export function AppShell({ children, theme, onToggleTheme }: AppShellProps) {
               aria-label="About"
             />
           </Tooltip>
+          <Menu
+            checkedValues={{ skin: [skin] }}
+            onCheckedValueChange={(_, { name, checkedItems }) => {
+              if (name !== 'skin') return;
+              const next = checkedItems[checkedItems.length - 1];
+              if (isSkinId(next)) onSkinChange(next);
+            }}
+          >
+            <MenuTrigger disableButtonEnhancement>
+              <Button
+                appearance="subtle"
+                icon={<PaintBrush24Regular />}
+                aria-label="Change portal skin"
+                title="Change portal skin"
+              />
+            </MenuTrigger>
+            <MenuPopover>
+              <MenuList>
+                {skinList.map((s) => (
+                  <MenuItemRadio key={s.id} name="skin" value={s.id}>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      <strong>{s.label}</strong>
+                      <span style={{ fontSize: 11, opacity: 0.7 }}>
+                        {s.description}
+                      </span>
+                    </div>
+                  </MenuItemRadio>
+                ))}
+              </MenuList>
+            </MenuPopover>
+          </Menu>
           <Tooltip
             content={theme === 'light' ? 'Switch to dark theme' : 'Switch to light theme'}
             relationship="label"
