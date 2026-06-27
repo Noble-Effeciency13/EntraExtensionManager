@@ -17,6 +17,15 @@ interface DemoContextValue {
   enterDemo: () => void;
   /** Leave demo mode and return to the sign-in screen. */
   exitDemo: () => void;
+  /**
+   * Drop the demo flag without reloading. Used right before kicking off a real
+   * Entra sign-in redirect so the app returns to a clean authenticated session.
+   */
+  clearDemo: () => void;
+  /** Bumped each time the guided walkthrough should (re)start. */
+  tourNonce: number;
+  /** Manually (re)launch the guided walkthrough. */
+  startTour: () => void;
 }
 
 const DemoContext = createContext<DemoContextValue | undefined>(undefined);
@@ -30,6 +39,9 @@ export function DemoProvider({ children }: { children: ReactNode }) {
   const [isDemo, setIsDemo] = useState(
     () => sessionStorage.getItem(DEMO_KEY) === '1',
   );
+  const [tourNonce, setTourNonce] = useState(0);
+
+  const startTour = useCallback(() => setTourNonce((n) => n + 1), []);
 
   const enterDemo = useCallback(() => {
     resetDemoStore();
@@ -37,6 +49,8 @@ export function DemoProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('eem.mode', 'read');
     sessionStorage.setItem(DEMO_KEY, '1');
     setIsDemo(true);
+    // Auto-launch the walkthrough on this fresh "sign-in".
+    setTourNonce((n) => n + 1);
   }, []);
 
   const exitDemo = useCallback(() => {
@@ -46,9 +60,16 @@ export function DemoProvider({ children }: { children: ReactNode }) {
     window.location.reload();
   }, []);
 
+  const clearDemo = useCallback(() => {
+    // Only drop the persisted flag — the caller immediately navigates away via a
+    // sign-in redirect, so there's no need to flip React state (and doing so
+    // would briefly flash the landing page).
+    sessionStorage.removeItem(DEMO_KEY);
+  }, []);
+
   const value = useMemo<DemoContextValue>(
-    () => ({ isDemo, enterDemo, exitDemo }),
-    [isDemo, enterDemo, exitDemo],
+    () => ({ isDemo, enterDemo, exitDemo, clearDemo, tourNonce, startTour }),
+    [isDemo, enterDemo, exitDemo, clearDemo, tourNonce, startTour],
   );
 
   return <DemoContext.Provider value={value}>{children}</DemoContext.Provider>;

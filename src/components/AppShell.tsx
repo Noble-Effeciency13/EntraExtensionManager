@@ -38,8 +38,10 @@ import {
   ClipboardCode24Regular,
   Code24Regular,
   PaintBrush24Regular,
+  QuestionCircle24Regular,
 } from '@fluentui/react-icons';
 import { useMode } from '@/auth/mode';
+import { loginRequest } from '@/auth/msalConfig';
 import { useAppToast } from '@/hooks/useAppToast';
 import { AboutDialog } from '@/components/AboutDialog';
 import { AppFooter } from '@/components/AppFooter';
@@ -48,6 +50,7 @@ import { useGlobalKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { TenantSwitcher } from '@/components/TenantSwitcher';
 import { isSkinId, skinList, type SkinId } from '@/theme/skins';
 import { useDemo } from '@/demo/DemoContext';
+import { DemoTour } from '@/demo/DemoTour';
 
 const useStyles = makeStyles({
   root: {
@@ -220,7 +223,7 @@ export function AppShell({
   const account = instance.getActiveAccount() ?? accounts[0];
   const location = useLocation();
   const { mode, isEdit, setMode, switching } = useMode();
-  const { isDemo, exitDemo } = useDemo();
+  const { isDemo, exitDemo, clearDemo, startTour } = useDemo();
   const toast = useAppToast();
   const qc = useQueryClient();
   const [aboutOpen, setAboutOpen] = useState(false);
@@ -277,6 +280,13 @@ export function AppShell({
     },
   });
 
+  const handleSignIn = () => {
+    // Leave the simulated tenant and start a real Entra sign-in. This is a
+    // one-way door: there is no path back into the demo from a real session.
+    clearDemo();
+    instance.loginRedirect(loginRequest).catch(console.error);
+  };
+
   return (
     <div className={styles.root} data-app-shell>
       <header className={styles.topbar}>
@@ -301,8 +311,15 @@ export function AppShell({
           )}
         </div>
         <div className={styles.topbarRight}>
-          <TenantSwitcher />
-          <div className={styles.modeGroup} role="group" aria-label="Access mode">
+          <span data-tour="tenant">
+            <TenantSwitcher />
+          </span>
+          <div
+            className={styles.modeGroup}
+            role="group"
+            aria-label="Access mode"
+            data-tour="mode"
+          >
             <Tooltip content="Read mode — no write actions" relationship="label">
               <ToggleButton
                 className={styles.modeButton}
@@ -339,6 +356,16 @@ export function AppShell({
               aria-label="About"
             />
           </Tooltip>
+          {isDemo && (
+            <Tooltip content="Take the guided tour" relationship="label">
+              <Button
+                appearance="subtle"
+                icon={<QuestionCircle24Regular />}
+                onClick={startTour}
+                aria-label="Take the guided tour"
+              />
+            </Tooltip>
+          )}
           <Menu
             checkedValues={{ skin: [skin] }}
             onCheckedValueChange={(_, { name, checkedItems }) => {
@@ -353,6 +380,7 @@ export function AppShell({
                 icon={<PaintBrush24Regular />}
                 aria-label="Change portal skin"
                 title="Change portal skin"
+                data-tour="skin"
               />
             </MenuTrigger>
             <MenuPopover>
@@ -379,11 +407,12 @@ export function AppShell({
               icon={theme === 'light' ? <WeatherMoon24Regular /> : <WeatherSunny24Regular />}
               onClick={onToggleTheme}
               aria-label="Toggle theme"
+              data-tour="theme"
             />
           </Tooltip>
           <Menu>
             <MenuTrigger disableButtonEnhancement>
-              <Button appearance="subtle" aria-label="Account menu">
+              <Button appearance="subtle" aria-label="Account menu" data-tour="account">
                 <Avatar
                   name={accountLabel}
                   initials={initials}
@@ -402,6 +431,12 @@ export function AppShell({
                     Simulated environment
                   </MenuItem>
                   <MenuDivider />
+                  <MenuItem
+                    icon={<PersonSwap24Regular />}
+                    onClick={handleSignIn}
+                  >
+                    Sign in to a real tenant
+                  </MenuItem>
                   <MenuItem icon={<SignOut24Regular />} onClick={exitDemo}>
                     Exit demo
                   </MenuItem>
@@ -487,7 +522,7 @@ export function AppShell({
         </div>
       </header>
 
-      <nav className={styles.nav} aria-label="Primary">
+      <nav className={styles.nav} aria-label="Primary" data-tour="nav">
         {navItems.map((item) => {
           const active =
             location.pathname === item.to ||
@@ -526,6 +561,7 @@ export function AppShell({
       <main className={styles.main}>{children}</main>
       <AppFooter />
       <AboutDialog open={aboutOpen} onOpenChange={setAboutOpen} />
+      <DemoTour />
     </div>
   );
 }
