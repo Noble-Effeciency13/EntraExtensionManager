@@ -9,6 +9,7 @@ import {
 } from 'react';
 import { useMsal } from '@azure/msal-react';
 import { buildTenantAuthority, editScopes, readScopes } from './msalConfig';
+import { useDemo } from '@/demo/DemoContext';
 
 export type Mode = 'read' | 'edit';
 
@@ -33,6 +34,7 @@ const ModeContext = createContext<ModeContextValue | undefined>(undefined);
 
 export function ModeProvider({ children }: { children: ReactNode }) {
   const { instance, accounts } = useMsal();
+  const { isDemo } = useDemo();
   const [mode, setModeState] = useState<Mode>(() => {
     const stored = localStorage.getItem(MODE_KEY);
     return stored === 'edit' ? 'edit' : 'read';
@@ -46,6 +48,11 @@ export function ModeProvider({ children }: { children: ReactNode }) {
   const setMode = useCallback<ModeContextValue['setMode']>(
     async (next) => {
       if (next === mode) return true;
+      // In the demo, edit mode is granted instantly with no consent redirect.
+      if (isDemo) {
+        setModeState(next);
+        return true;
+      }
       if (next === 'edit') {
         const account = instance.getActiveAccount() ?? accounts[0];
         if (!account) return false;
@@ -78,7 +85,7 @@ export function ModeProvider({ children }: { children: ReactNode }) {
       setModeState('read');
       return true;
     },
-    [mode, instance, accounts],
+    [mode, instance, accounts, isDemo],
   );
 
   const value = useMemo<ModeContextValue>(

@@ -18,8 +18,10 @@ import {
   ShieldCheckmark20Regular,
   Eye20Regular,
   Cloud20Regular,
+  Beaker20Regular,
 } from '@fluentui/react-icons';
 import { loginRequest } from './msalConfig';
+import { useDemo } from '@/demo/DemoContext';
 
 const useStyles = makeStyles({
   root: {
@@ -125,6 +127,17 @@ const useStyles = makeStyles({
   signInButton: {
     width: '100%',
   },
+  demoRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    color: tokens.colorNeutralForeground3,
+  },
+  demoLine: {
+    flex: '1 1 auto',
+    height: '1px',
+    backgroundColor: tokens.colorNeutralStroke2,
+  },
   footnote: {
     color: tokens.colorNeutralForeground3,
     textAlign: 'center',
@@ -158,6 +171,11 @@ const features: Feature[] = [
 export function AuthGate({ children }: { children: ReactNode }) {
   const styles = useStyles();
   const { instance } = useMsal();
+  const { isDemo, enterDemo } = useDemo();
+
+  // Demo mode bypasses Microsoft Entra entirely and renders the app against the
+  // simulated tenant.
+  if (isDemo) return <>{children}</>;
 
   return (
     <>
@@ -211,6 +229,28 @@ export function AuthGate({ children }: { children: ReactNode }) {
             >
               Sign in with Microsoft Entra
             </Button>
+
+            <div className={styles.demoRow}>
+              <span className={styles.demoLine} />
+              <Caption1>or</Caption1>
+              <span className={styles.demoLine} />
+            </div>
+
+            <Button
+              appearance="secondary"
+              size="large"
+              className={styles.signInButton}
+              icon={<Beaker20Regular />}
+              onClick={enterDemo}
+            >
+              Explore the live demo
+            </Button>
+
+            <Caption1 className={styles.footnote}>
+              No sign-in required — browse a fully simulated tenant with sample
+              extensions, usage and audit data. Nothing is sent to Microsoft
+              Graph.
+            </Caption1>
 
             <Caption1 className={styles.footnote}>
               By signing in you agree to your organization&rsquo;s policies. MFA

@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter } from 'react-router-dom';
 import { msalConfig } from '@/auth/msalConfig';
 import { ModeProvider } from '@/auth/mode';
+import { DemoProvider } from '@/demo/DemoContext';
 import { App } from '@/App';
 import '@/global-overrides.css';
 import '@/skins.css';
@@ -63,15 +64,17 @@ async function bootstrap() {
 
   ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>
-      <MsalProvider instance={msalInstance}>
-        <ModeProvider>
-          <QueryClientProvider client={queryClient}>
-            <BrowserRouter>
-              <App />
-            </BrowserRouter>
-          </QueryClientProvider>
-        </ModeProvider>
-      </MsalProvider>
+      <DemoProvider>
+        <MsalProvider instance={msalInstance}>
+          <ModeProvider>
+            <QueryClientProvider client={queryClient}>
+              <BrowserRouter>
+                <App />
+              </BrowserRouter>
+            </QueryClientProvider>
+          </ModeProvider>
+        </MsalProvider>
+      </DemoProvider>
     </React.StrictMode>,
   );
 }

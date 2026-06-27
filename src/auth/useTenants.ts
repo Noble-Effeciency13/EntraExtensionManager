@@ -2,6 +2,8 @@ import { useState, useCallback, useEffect } from 'react';
 import { useMsal } from '@azure/msal-react';
 import { InteractionRequiredAuthError } from '@azure/msal-browser';
 import { buildTenantAuthority } from './msalConfig';
+import { useDemo } from '@/demo/DemoContext';
+import { DEMO_TENANTS } from '@/demo/demoData';
 
 const MANAGEMENT_SCOPE = 'https://management.azure.com/user_impersonation';
 const TENANTS_ENDPOINT = 'https://management.azure.com/tenants?api-version=2022-12-01';
@@ -44,6 +46,7 @@ export interface UseTenants {
  */
 export function useTenants(): UseTenants {
   const { instance, accounts } = useMsal();
+  const { isDemo } = useDemo();
   const [tenants, setTenants] = useState<TenantInfo[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
@@ -114,12 +117,24 @@ export function useTenants(): UseTenants {
   // pre-populated before the user opens the switcher dropdown.
   const accountId = (instance.getActiveAccount() ?? accounts[0])?.homeAccountId;
   useEffect(() => {
+    if (isDemo) return;
     if (accountId) {
       void fetchTenants(false);
     }
     // Re-fetch when the signed-in account changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [accountId]);
+  }, [accountId, isDemo]);
+
+  if (isDemo) {
+    return {
+      tenants: DEMO_TENANTS,
+      loading: false,
+      error: null,
+      hasFetched: true,
+      needsConsent: false,
+      fetchTenants: async () => {},
+    };
+  }
 
   return { tenants, loading, error, hasFetched, needsConsent, fetchTenants };
 }

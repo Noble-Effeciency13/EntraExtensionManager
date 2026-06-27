@@ -47,6 +47,7 @@ import { BrandLogo } from '@/components/BrandLogo';
 import { useGlobalKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { TenantSwitcher } from '@/components/TenantSwitcher';
 import { isSkinId, skinList, type SkinId } from '@/theme/skins';
+import { useDemo } from '@/demo/DemoContext';
 
 const useStyles = makeStyles({
   root: {
@@ -219,6 +220,7 @@ export function AppShell({
   const account = instance.getActiveAccount() ?? accounts[0];
   const location = useLocation();
   const { mode, isEdit, setMode, switching } = useMode();
+  const { isDemo, exitDemo } = useDemo();
   const toast = useAppToast();
   const qc = useQueryClient();
   const [aboutOpen, setAboutOpen] = useState(false);
@@ -237,7 +239,10 @@ export function AppShell({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const initials = (account?.name ?? account?.username ?? '?')
+  const accountLabel = isDemo
+    ? 'Demo User'
+    : account?.name ?? account?.username ?? '';
+  const initials = (accountLabel || '?')
     .split(/\s+/)
     .map((p) => p[0])
     .filter(Boolean)
@@ -283,6 +288,15 @@ export function AppShell({
           {isEdit && (
             <Badge appearance="filled" color="danger" className={styles.editBadge}>
               Edit mode
+            </Badge>
+          )}
+          {isDemo && (
+            <Badge
+              appearance="filled"
+              color="informative"
+              className={styles.editBadge}
+            >
+              Demo
             </Badge>
           )}
         </div>
@@ -371,18 +385,29 @@ export function AppShell({
             <MenuTrigger disableButtonEnhancement>
               <Button appearance="subtle" aria-label="Account menu">
                 <Avatar
-                  name={account?.name ?? account?.username}
+                  name={accountLabel}
                   initials={initials}
                   color="colorful"
                   size={28}
                 />
                 <span style={{ marginLeft: 10 }} className={styles.userName}>
-                  {account?.name ?? account?.username}
+                  {accountLabel}
                 </span>
               </Button>
             </MenuTrigger>
             <MenuPopover>
-              <MenuList
+              {isDemo ? (
+                <MenuList>
+                  <MenuItem disabled icon={<Eye24Regular />}>
+                    Simulated environment
+                  </MenuItem>
+                  <MenuDivider />
+                  <MenuItem icon={<SignOut24Regular />} onClick={exitDemo}>
+                    Exit demo
+                  </MenuItem>
+                </MenuList>
+              ) : (
+                <MenuList
                 checkedValues={{
                   account: account ? [account.homeAccountId] : [],
                 }}
@@ -456,6 +481,7 @@ export function AppShell({
                   Sign out
                 </MenuItem>
               </MenuList>
+              )}
             </MenuPopover>
           </Menu>
         </div>

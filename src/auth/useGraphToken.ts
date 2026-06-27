@@ -3,6 +3,8 @@ import { useMsal } from '@azure/msal-react';
 import { InteractionRequiredAuthError } from '@azure/msal-browser';
 import { useMode } from './mode';
 import { buildTenantAuthority } from './msalConfig';
+import { useDemo } from '@/demo/DemoContext';
+import { DEMO_GRAPH_TOKEN } from '@/demo/demoClient';
 
 /**
  * Returns a function that yields a Graph access token scoped to the currently
@@ -13,8 +15,12 @@ import { buildTenantAuthority } from './msalConfig';
 export function useGraphToken() {
   const { instance, accounts } = useMsal();
   const { scopes } = useMode();
+  const { isDemo } = useDemo();
 
   return useCallback(async (): Promise<string> => {
+    // Demo mode never talks to Microsoft Graph; hand back a sentinel token that
+    // createGraphClient() recognises and routes to the offline demo client.
+    if (isDemo) return DEMO_GRAPH_TOKEN;
     const account = instance.getActiveAccount() ?? accounts[0];
     if (!account) {
       throw new Error('No signed-in account.');
@@ -32,5 +38,5 @@ export function useGraphToken() {
       }
       throw err;
     }
-  }, [instance, accounts, scopes]);
+  }, [instance, accounts, scopes, isDemo]);
 }

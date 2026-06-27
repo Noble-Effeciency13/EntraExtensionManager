@@ -24,6 +24,7 @@ import {
 import { useTenants, TenantInfo } from '@/auth/useTenants';
 import { buildTenantAuthority, readScopes } from '@/auth/msalConfig';
 import { useAppToast } from '@/hooks/useAppToast';
+import { useDemo } from '@/demo/DemoContext';
 
 const useStyles = makeStyles({
   tenantItem: {
@@ -40,16 +41,21 @@ const useStyles = makeStyles({
 export function TenantSwitcher() {
   const styles = useStyles();
   const { instance, accounts } = useMsal();
+  const { isDemo } = useDemo();
   const qc = useQueryClient();
   const toast = useAppToast();
   const { tenants, loading, error, needsConsent, fetchTenants } = useTenants();
   const [switching, setSwitching] = useState(false);
 
   const activeAccount = instance.getActiveAccount() ?? accounts[0];
-  const activeTenantId = activeAccount?.tenantId;
+  const activeTenantId = isDemo ? tenants[0]?.tenantId : activeAccount?.tenantId;
 
   const handleSwitch = async (tenant: TenantInfo) => {
     if (tenant.tenantId === activeTenantId || switching) return;
+    if (isDemo) {
+      toast.success('Tenant switch (simulated)', tenant.displayName);
+      return;
+    }
     setSwitching(true);
     try {
       // If we already have a cached MSAL account for this tenant, just activate
