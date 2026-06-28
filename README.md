@@ -244,8 +244,7 @@ The release package includes a `config.js` file that is read at runtime, so you 
 window.__EEM_CONFIG__ = {
   aadClientId: 'your-application-client-id',
   aadTenantId: '__VITE_AAD_TENANT_ID__', // present for compatibility; ignored
-  aadRedirectUri: 'https://extensions.contoso.com',
-};
+  aadRedirectUri: 'https://extensions.contoso.com',};
 ```
 
 | Configuration | Purpose |
