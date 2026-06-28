@@ -22,10 +22,6 @@ interface DemoContextValue {
    * Entra sign-in redirect so the app returns to a clean authenticated session.
    */
   clearDemo: () => void;
-  /** Bumped each time the guided walkthrough should (re)start. */
-  tourNonce: number;
-  /** Manually (re)launch the guided walkthrough. */
-  startTour: () => void;
 }
 
 const DemoContext = createContext<DemoContextValue | undefined>(undefined);
@@ -39,18 +35,15 @@ export function DemoProvider({ children }: { children: ReactNode }) {
   const [isDemo, setIsDemo] = useState(
     () => sessionStorage.getItem(DEMO_KEY) === '1',
   );
-  const [tourNonce, setTourNonce] = useState(0);
-
-  const startTour = useCallback(() => setTourNonce((n) => n + 1), []);
 
   const enterDemo = useCallback(() => {
     resetDemoStore();
     // Demo always starts in read mode for a predictable first impression.
     localStorage.setItem('eem.mode', 'read');
     sessionStorage.setItem(DEMO_KEY, '1');
+    // Flag the walkthrough to auto-launch once the shell mounts.
+    sessionStorage.setItem('eem.demo.tourPending', '1');
     setIsDemo(true);
-    // Auto-launch the walkthrough on this fresh "sign-in".
-    setTourNonce((n) => n + 1);
   }, []);
 
   const exitDemo = useCallback(() => {
@@ -68,8 +61,8 @@ export function DemoProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo<DemoContextValue>(
-    () => ({ isDemo, enterDemo, exitDemo, clearDemo, tourNonce, startTour }),
-    [isDemo, enterDemo, exitDemo, clearDemo, tourNonce, startTour],
+    () => ({ isDemo, enterDemo, exitDemo, clearDemo }),
+    [isDemo, enterDemo, exitDemo, clearDemo],
   );
 
   return <DemoContext.Provider value={value}>{children}</DemoContext.Provider>;

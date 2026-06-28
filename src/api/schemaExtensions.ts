@@ -1,6 +1,7 @@
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { createGraphClient } from '@/graph/client';
 import { useGraphToken } from '@/auth/useGraphToken';
+import { escapeODataString } from '@/graph/odata';
 import type {
   SchemaExtension,
   SchemaExtensionForm,
@@ -40,8 +41,7 @@ export function useSchemaExtensions(filter: SchemaExtensionsFilter) {
         const filters: string[] = [];
         if (filter.status) filters.push(`status eq '${filter.status}'`);
         if (filter.ownerAppId) {
-          const ownerEsc = filter.ownerAppId.replace(/'/g, "''");
-          filters.push(`owner eq '${ownerEsc}'`);
+          filters.push(`owner eq '${escapeODataString(filter.ownerAppId)}'`);
         }
         if (filters.length > 0) req = req.filter(filters.join(' and '));
         res = await req.get();

@@ -12,6 +12,7 @@ import {
   OverviewExtension,
 } from '@/components/ExtensionsOverview';
 import { AuditLogDialog } from '@/components/AuditLogDialog';
+import { ErrorMessageBar } from '@/components/ErrorMessageBar';
 import {
   ChartCard,
   Donut,
@@ -55,6 +56,8 @@ export function AuditLogPage() {
         summarise the extensions <em>owned by an app in this tenant</em>;
         global schemas owned by other tenants are excluded.
       </Body1>
+
+      <ErrorMessageBar error={agg.error} title="Couldn't load extension data" />
 
       <div className={styles.grid}>
         <StatCard

@@ -1,6 +1,7 @@
 import { useQueries } from '@tanstack/react-query';
 import { createGraphClient } from '@/graph/client';
 import { useGraphToken } from '@/auth/useGraphToken';
+import { escapeODataString } from '@/graph/odata';
 
 /**
  * Resolve the home tenant (appOwnerOrganizationId) for one or more
@@ -22,7 +23,7 @@ export function useOwnerTenantIds(appIds: string[], enabled: boolean) {
         const client = createGraphClient(await getToken());
         const res = await client
           .api('/servicePrincipals')
-          .filter(`appId eq '${appId}'`)
+          .filter(`appId eq '${escapeODataString(appId)}'`)
           .select('appOwnerOrganizationId')
           .top(1)
           .get();

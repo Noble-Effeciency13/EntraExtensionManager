@@ -4,6 +4,34 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project follows semantic versioning where practical.
 
+## [Unreleased]
+
+### Added
+
+- **Skins** — five selectable portal themes (Fluent, Retro, 8-bit, Synthwave, Newsprint), each with light and dark variants, chosen from the top bar and remembered across sessions.
+- **Demo mode** — a one-click "Explore the live demo" on the landing page renders the full portal against a fully simulated, in-memory tenant (sample schema, directory, and open extensions plus usage and audit data). All reads and writes are served offline; nothing is sent to Microsoft Graph. Includes "Reset demo data" and a one-way "Sign in to a real tenant".
+- **Guided tours / coach marks** — a spotlight walkthrough available from a Help (`?`) button on every page (live and demo), with per-page steps, a focus-trapped accessible callout, and a Skip action. Auto-runs once when entering the demo.
+- **Command palette** (<kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>K</kbd>) — search to navigate, switch skin/theme/mode, start a tour, or run demo actions.
+- **Manifest snippet** now also generates Microsoft Graph **PowerShell** and raw **HTTP** request snippets, in addition to the JSON body and app-manifest shape.
+- **Usage monitor** flags **deprecated definitions that still hold values** so they can be migrated before removal.
+- Keyboard shortcuts are documented in the About dialog.
+- A global **error boundary** with a friendly recovery screen (reload / report on GitHub).
+- **Route-level code splitting** — pages load on demand, shrinking the initial bundle.
+- Unit tests for the demo Graph client, manifest/CSV utilities, and OData escaping; a Playwright e2e smoke suite (`npm run test:e2e`) that drives demo mode; `eslint-plugin-jsx-a11y` accessibility linting; and a `format:check` script.
+
+### Changed
+
+- Centralized Microsoft Graph client acquisition and collection pagination behind shared helpers (`useGraphClient`, `fetchAllPages`).
+
+### Security
+
+- Centralized OData `$filter` quote-escaping (`escapeODataString`) across all Graph queries.
+- CSV exports neutralize spreadsheet formula injection (values starting with `=`, `+`, `-`, or `@`).
+
+### Removed
+
+- The unused `msw` dependency (added `@types/node` explicitly, which `vite.config.ts` relies on).
+
 ## [1.0.0] - 2026-06-22
 
 ### Added

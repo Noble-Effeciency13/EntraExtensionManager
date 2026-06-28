@@ -44,6 +44,19 @@ const useStyles = makeStyles({
     fontSize: tokens.fontSizeBase200,
     fontFamily: tokens.fontFamilyMonospace,
   },
+  shortcuts: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '6px',
+    margin: 0,
+    padding: 0,
+    listStyle: 'none',
+  },
+  shortcutRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+  },
   scopeList: {
     display: 'flex',
     flexWrap: 'wrap',
@@ -150,6 +163,34 @@ export function AboutDialog({ open, onOpenChange }: AboutDialogProps) {
                   <Badge appearance="tint" color="danger">
                     Directory.ReadWrite.All
                   </Badge>
+                </li>
+              </ul>
+            </div>
+
+            <div className={styles.section}>
+              <Subtitle2 className={styles.sectionTitle} as="h3">
+                Keyboard shortcuts
+              </Subtitle2>
+              <ul className={styles.shortcuts} aria-label="Keyboard shortcuts">
+                <li className={styles.shortcutRow}>
+                  <span className={styles.pill}>Ctrl / ⌘ + K</span>
+                  <span>Command palette</span>
+                </li>
+                <li className={styles.shortcutRow}>
+                  <span className={styles.pill}>/</span>
+                  <span>Focus search</span>
+                </li>
+                <li className={styles.shortcutRow}>
+                  <span className={styles.pill}>n</span>
+                  <span>New definition</span>
+                </li>
+                <li className={styles.shortcutRow}>
+                  <span className={styles.pill}>e</span>
+                  <span>Toggle Edit mode</span>
+                </li>
+                <li className={styles.shortcutRow}>
+                  <span className={styles.pill}>?</span>
+                  <span>Open this dialog</span>
                 </li>
               </ul>
             </div>

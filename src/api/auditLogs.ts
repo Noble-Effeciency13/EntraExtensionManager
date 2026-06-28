@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { createGraphClient } from '@/graph/client';
 import { useGraphToken } from '@/auth/useGraphToken';
+import { escapeODataString } from '@/graph/odata';
 
 export interface AuditEntry {
   id: string;
@@ -26,7 +27,7 @@ export function useExtensionAuditLog(extensionId: string | null, enabled: boolea
     queryFn: async (): Promise<AuditEntry[]> => {
       const client = createGraphClient(await getToken());
       // Filter on targetResources/any() with id eq is broadly supported.
-      const filter = `targetResources/any(t:t/id eq '${extensionId}')`;
+      const filter = `targetResources/any(t:t/id eq '${escapeODataString(extensionId ?? '')}')`;
       const res = await client
         .api('/auditLogs/directoryAudits')
         .filter(filter)

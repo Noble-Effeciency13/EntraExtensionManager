@@ -2,6 +2,9 @@ import { useEffect, useState } from 'react';
 import { FluentProvider, Toaster } from '@fluentui/react-components';
 import { AuthGate } from '@/auth/AuthGate';
 import { AppShell } from '@/components/AppShell';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { TourProvider } from '@/components/tour/TourProvider';
+import { appChromeTour } from '@/components/tour/appTour';
 import { AppRoutes } from '@/router';
 import { TOASTER_ID } from '@/components/toast';
 import {
@@ -40,16 +43,20 @@ export function App() {
 
   return (
     <FluentProvider theme={resolveTheme(skin, theme)}>
-      <AuthGate>
-        <AppShell
-          theme={theme}
-          onToggleTheme={toggleTheme}
-          skin={skin}
-          onSkinChange={setSkin}
-        >
-          <AppRoutes />
-        </AppShell>
-      </AuthGate>
+      <ErrorBoundary>
+        <TourProvider chromeSteps={appChromeTour}>
+          <AuthGate>
+            <AppShell
+              theme={theme}
+              onToggleTheme={toggleTheme}
+              skin={skin}
+              onSkinChange={setSkin}
+            >
+              <AppRoutes />
+            </AppShell>
+          </AuthGate>
+        </TourProvider>
+      </ErrorBoundary>
       <Toaster toasterId={TOASTER_ID} position="top-end" />
     </FluentProvider>
   );

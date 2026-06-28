@@ -1,5 +1,5 @@
 import { ReactNode, useEffect, useState } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useMsal } from '@azure/msal-react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
@@ -39,6 +39,7 @@ import {
   Code24Regular,
   PaintBrush24Regular,
   QuestionCircle24Regular,
+  ArrowReset24Regular,
 } from '@fluentui/react-icons';
 import { useMode } from '@/auth/mode';
 import { loginRequest } from '@/auth/msalConfig';
@@ -50,7 +51,10 @@ import { useGlobalKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { TenantSwitcher } from '@/components/TenantSwitcher';
 import { isSkinId, skinList, type SkinId } from '@/theme/skins';
 import { useDemo } from '@/demo/DemoContext';
-import { DemoTour } from '@/demo/DemoTour';
+import { useTour } from '@/components/tour/TourProvider';
+import { appChromeTour } from '@/components/tour/appTour';
+import { resetDemoStore } from '@/demo/demoData';
+import { CommandPalette, type Command } from '@/components/CommandPalette';
 
 const useStyles = makeStyles({
   root: {
@@ -222,11 +226,14 @@ export function AppShell({
   const { instance, accounts } = useMsal();
   const account = instance.getActiveAccount() ?? accounts[0];
   const location = useLocation();
+  const navigate = useNavigate();
   const { mode, isEdit, setMode, switching } = useMode();
-  const { isDemo, exitDemo, clearDemo, startTour } = useDemo();
+  const { isDemo, exitDemo, clearDemo } = useDemo();
+  const { start, startPageTour } = useTour();
   const toast = useAppToast();
   const qc = useQueryClient();
   const [aboutOpen, setAboutOpen] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useState(false);
 
   // Show any toast that was deferred across a redirect (e.g. tenant switch).
   useEffect(() => {
@@ -286,6 +293,99 @@ export function AppShell({
     clearDemo();
     instance.loginRedirect(loginRequest).catch(console.error);
   };
+
+  // Auto-launch the walkthrough once, immediately after entering the demo. In a
+  // real session the tour never auto-runs — it's available via the Help button.
+  useEffect(() => {
+    if (isDemo && sessionStorage.getItem('eem.demo.tourPending') === '1') {
+      sessionStorage.removeItem('eem.demo.tourPending');
+      start(appChromeTour);
+    }
+  }, [isDemo, start]);
+
+  // Global command palette (Ctrl/Cmd+K).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setPaletteOpen((o) => !o);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
+  const commands: Command[] = [
+    ...navItems.map((n) => ({
+      id: `nav:${n.to}`,
+      label: n.label,
+      group: 'Go to',
+      icon: n.icon,
+      run: () => navigate(n.to),
+    })),
+    ...toolNavItems.map((n) => ({
+      id: `tool:${n.to}`,
+      label: n.label,
+      group: 'Tools',
+      icon: n.icon,
+      run: () => navigate(n.to),
+    })),
+    {
+      id: 'theme',
+      label: theme === 'light' ? 'Switch to dark theme' : 'Switch to light theme',
+      group: 'Appearance',
+      run: onToggleTheme,
+    },
+    ...skinList.map((s) => ({
+      id: `skin:${s.id}`,
+      label: `Skin: ${s.label}`,
+      group: 'Appearance',
+      keywords: s.description,
+      run: () => onSkinChange(s.id),
+    })),
+    {
+      id: 'mode',
+      label: mode === 'edit' ? 'Switch to Read mode' : 'Switch to Edit mode',
+      group: 'Mode',
+      run: () => void handleModeChange(mode === 'edit' ? 'read' : 'edit'),
+    },
+    {
+      id: 'tour',
+      label: 'Take a guided tour',
+      group: 'Help',
+      run: startPageTour,
+    },
+    {
+      id: 'about',
+      label: 'About this app',
+      group: 'Help',
+      run: () => setAboutOpen(true),
+    },
+    ...(isDemo
+      ? [
+          {
+            id: 'demo:reset',
+            label: 'Reset demo data',
+            group: 'Demo',
+            run: () => {
+              resetDemoStore();
+              qc.invalidateQueries();
+              toast.success(
+                'Demo data reset',
+                'Back to the original sample tenant.',
+              );
+            },
+          },
+          {
+            id: 'demo:signin',
+            label: 'Sign in to a real tenant',
+            group: 'Demo',
+            run: handleSignIn,
+          },
+          { id: 'demo:exit', label: 'Exit demo', group: 'Demo', run: exitDemo },
+        ]
+      : []),
+  ];
 
   return (
     <div className={styles.root} data-app-shell>
@@ -356,16 +456,14 @@ export function AppShell({
               aria-label="About"
             />
           </Tooltip>
-          {isDemo && (
-            <Tooltip content="Take the guided tour" relationship="label">
-              <Button
-                appearance="subtle"
-                icon={<QuestionCircle24Regular />}
-                onClick={startTour}
-                aria-label="Take the guided tour"
-              />
-            </Tooltip>
-          )}
+          <Tooltip content="Take a guided tour" relationship="label">
+            <Button
+              appearance="subtle"
+              icon={<QuestionCircle24Regular />}
+              onClick={startPageTour}
+              aria-label="Take a guided tour"
+            />
+          </Tooltip>
           <Menu
             checkedValues={{ skin: [skin] }}
             onCheckedValueChange={(_, { name, checkedItems }) => {
@@ -429,6 +527,20 @@ export function AppShell({
                 <MenuList>
                   <MenuItem disabled icon={<Eye24Regular />}>
                     Simulated environment
+                  </MenuItem>
+                  <MenuDivider />
+                  <MenuItem
+                    icon={<ArrowReset24Regular />}
+                    onClick={() => {
+                      resetDemoStore();
+                      qc.invalidateQueries();
+                      toast.success(
+                        'Demo data reset',
+                        'Back to the original sample tenant.',
+                      );
+                    }}
+                  >
+                    Reset demo data
                   </MenuItem>
                   <MenuDivider />
                   <MenuItem
@@ -561,7 +673,11 @@ export function AppShell({
       <main className={styles.main}>{children}</main>
       <AppFooter />
       <AboutDialog open={aboutOpen} onOpenChange={setAboutOpen} />
-      <DemoTour />
+      <CommandPalette
+        open={paletteOpen}
+        onOpenChange={setPaletteOpen}
+        commands={commands}
+      />
     </div>
   );
 }

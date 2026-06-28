@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { createGraphClient } from '@/graph/client';
-import { useGraphToken } from '@/auth/useGraphToken';
+import { useGraphClient } from '@/graph/useGraphClient';
+import { fetchAllPages } from '@/graph/paging';
 import type {
   AppRegistration,
   DirectoryExtensionForm,
@@ -21,34 +21,32 @@ export interface AppWithExtensions {
  * bounded by the number of app registrations in this tenant).
  */
 export function useAllDirectoryExtensions() {
-  const getToken = useGraphToken();
+  const getClient = useGraphClient();
   return useQuery({
     queryKey: QK_ALL,
     queryFn: async (): Promise<AppWithExtensions[]> => {
-      const client = createGraphClient(await getToken());
+      const client = await getClient();
+      const apps = await fetchAllPages<{
+        id: string;
+        appId: string;
+        displayName: string;
+        extensionProperties?: DirectoryExtensionProperty[];
+      }>(
+        client,
+        client
+          .api('/applications')
+          .select('id,appId,displayName')
+          .expand('extensionProperties')
+          .top(200),
+      );
       const out: AppWithExtensions[] = [];
-      let res = await client
-        .api('/applications')
-        .select('id,appId,displayName')
-        .expand('extensionProperties')
-        .top(200)
-        .get();
-      while (res) {
-        for (const raw of res.value ?? []) {
-          const exts = (raw.extensionProperties ?? []) as DirectoryExtensionProperty[];
-          if (exts.length === 0) continue;
-          out.push({
-            app: {
-              id: raw.id as string,
-              appId: raw.appId as string,
-              displayName: raw.displayName as string,
-            },
-            extensions: exts,
-          });
-        }
-        const next = res['@odata.nextLink'] as string | undefined;
-        if (!next) break;
-        res = await client.api(next).get();
+      for (const raw of apps) {
+        const exts = raw.extensionProperties ?? [];
+        if (exts.length === 0) continue;
+        out.push({
+          app: { id: raw.id, appId: raw.appId, displayName: raw.displayName },
+          extensions: exts,
+        });
       }
       out.sort((a, b) => a.app.displayName.localeCompare(b.app.displayName));
       return out;
@@ -63,24 +61,18 @@ export function useAllDirectoryExtensions() {
  * directory-extensions request so each consumer can fetch only what it needs.
  */
 export function useTenantAppIds() {
-  const getToken = useGraphToken();
+  const getClient = useGraphClient();
   return useQuery({
     queryKey: ['applications', 'appIds'] as const,
     queryFn: async (): Promise<Set<string>> => {
-      const client = createGraphClient(await getToken());
+      const client = await getClient();
+      const apps = await fetchAllPages<{ appId?: string }>(
+        client,
+        client.api('/applications').select('appId').top(999),
+      );
       const ids = new Set<string>();
-      let res = await client
-        .api('/applications')
-        .select('appId')
-        .top(999)
-        .get();
-      while (res) {
-        for (const raw of res.value ?? []) {
-          if (raw.appId) ids.add(raw.appId as string);
-        }
-        const next = res['@odata.nextLink'] as string | undefined;
-        if (!next) break;
-        res = await client.api(next).get();
+      for (const raw of apps) {
+        if (raw.appId) ids.add(raw.appId);
       }
       return ids;
     },
@@ -88,13 +80,13 @@ export function useTenantAppIds() {
 }
 
 export function useCreateExtensionProperty(appObjectId: string) {
-  const getToken = useGraphToken();
+  const getClient = useGraphClient();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (
       input: DirectoryExtensionForm,
     ): Promise<DirectoryExtensionProperty> => {
-      const client = createGraphClient(await getToken());
+      const client = await getClient();
       return client
         .api(`/applications/${appObjectId}/extensionProperties`)
         .post(input);
@@ -104,11 +96,11 @@ export function useCreateExtensionProperty(appObjectId: string) {
 }
 
 export function useDeleteExtensionProperty(appObjectId: string) {
-  const getToken = useGraphToken();
+  const getClient = useGraphClient();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (extensionId: string): Promise<void> => {
-      const client = createGraphClient(await getToken());
+      const client = await getClient();
       await client
         .api(`/applications/${appObjectId}/extensionProperties/${extensionId}`)
         .delete();
@@ -123,14 +115,14 @@ export function useDeleteExtensionProperty(appObjectId: string) {
  * per row.
  */
 export function useImportExtensionProperty() {
-  const getToken = useGraphToken();
+  const getClient = useGraphClient();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (input: {
       appObjectId: string;
       payload: DirectoryExtensionForm;
     }): Promise<DirectoryExtensionProperty> => {
-      const client = createGraphClient(await getToken());
+      const client = await getClient();
       return client
         .api(`/applications/${input.appObjectId}/extensionProperties`)
         .post(input.payload);

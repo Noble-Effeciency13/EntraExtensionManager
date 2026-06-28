@@ -10,10 +10,12 @@ export function downloadJson(filename: string, data: unknown) {
 }
 
 export function downloadCsv(filename: string, rows: Record<string, unknown>[]) {
-  if (rows.length === 0) {
-    triggerDownload(filename, new Blob([''], { type: 'text/csv' }));
-    return;
-  }
+  triggerDownload(filename, new Blob([toCsv(rows)], { type: 'text/csv;charset=utf-8' }));
+}
+
+/** Serialize rows to CSV text with quote- and formula-injection-safe escaping. */
+export function toCsv(rows: Record<string, unknown>[]): string {
+  if (rows.length === 0) return '';
   const headers = Array.from(
     rows.reduce<Set<string>>((set, r) => {
       Object.keys(r).forEach((k) => set.add(k));
@@ -22,15 +24,18 @@ export function downloadCsv(filename: string, rows: Record<string, unknown>[]) {
   );
   const escape = (v: unknown): string => {
     if (v === null || v === undefined) return '';
-    const s = Array.isArray(v) ? v.join('|') : String(v);
+    let s = Array.isArray(v) ? v.join('|') : String(v);
+    // Neutralize CSV formula injection: a leading =, +, -, @, tab or CR can be
+    // executed as a formula by spreadsheet apps. Prefix such values with an
+    // apostrophe so they're treated as text.
+    if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`;
     if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
     return s;
   };
-  const csv = [
+  return [
     headers.join(','),
     ...rows.map((r) => headers.map((h) => escape(r[h])).join(',')),
   ].join('\r\n');
-  triggerDownload(filename, new Blob([csv], { type: 'text/csv;charset=utf-8' }));
 }
 
 function triggerDownload(filename: string, blob: Blob) {

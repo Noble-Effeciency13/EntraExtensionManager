@@ -20,8 +20,12 @@ import type {
 } from '@/types/extensions';
 import {
   directoryExtensionAppManifestSnippet,
+  directoryExtensionHttp,
   directoryExtensionManifest,
+  directoryExtensionPowerShell,
+  schemaExtensionHttp,
   schemaExtensionManifest,
+  schemaExtensionPowerShell,
 } from '@/utils/manifest';
 import { useAppToast } from '@/hooks/useAppToast';
 
@@ -47,22 +51,38 @@ type Props =
       ext: DirectoryExtensionProperty;
     };
 
+type SnippetTab = 'graph' | 'manifest' | 'powershell' | 'http';
+
 export function ManifestSnippetDialog(props: Props) {
   const styles = useStyles();
   const toast = useAppToast();
-  const [tab, setTab] = useState<'graph' | 'manifest'>('graph');
+  const [tab, setTab] = useState<SnippetTab>('graph');
 
-  const graphBody =
+  const snippets: Partial<Record<SnippetTab, string>> =
     props.variant === 'schema'
-      ? schemaExtensionManifest(props.ext)
-      : directoryExtensionManifest(props.ext);
+      ? {
+          graph: schemaExtensionManifest(props.ext),
+          powershell: schemaExtensionPowerShell(props.ext),
+          http: schemaExtensionHttp(props.ext),
+        }
+      : {
+          graph: directoryExtensionManifest(props.ext),
+          manifest: directoryExtensionAppManifestSnippet(props.ext),
+          powershell: directoryExtensionPowerShell(props.ext),
+          http: directoryExtensionHttp(props.ext),
+        };
 
-  const manifestBody =
-    props.variant === 'schema'
-      ? graphBody
-      : directoryExtensionAppManifestSnippet(props.ext);
-
-  const current = tab === 'graph' ? graphBody : manifestBody;
+  const current = snippets[tab] ?? snippets.graph ?? '';
+  const caption =
+    tab === 'manifest'
+      ? 'Paste into your app registration manifest (extensionProperties).'
+      : tab === 'powershell'
+        ? 'Run with the Microsoft.Graph PowerShell SDK.'
+        : tab === 'http'
+          ? 'Raw Graph request — paste into Graph Explorer or an HTTP client.'
+          : props.variant === 'schema'
+            ? 'JSON body for POST /schemaExtensions.'
+            : 'JSON body for POST /applications/{id}/extensionProperties.';
 
   const copy = async () => {
     try {
@@ -81,20 +101,16 @@ export function ManifestSnippetDialog(props: Props) {
           <DialogContent className={styles.body}>
             <TabList
               selectedValue={tab}
-              onTabSelect={(_, d) => setTab(d.value as 'graph' | 'manifest')}
+              onTabSelect={(_, d) => setTab(d.value as SnippetTab)}
             >
-              <Tab value="graph">Graph POST body</Tab>
+              <Tab value="graph">JSON body</Tab>
               {props.variant === 'directory' && (
-                <Tab value="manifest">App manifest snippet</Tab>
+                <Tab value="manifest">App manifest</Tab>
               )}
+              <Tab value="powershell">PowerShell</Tab>
+              <Tab value="http">HTTP</Tab>
             </TabList>
-            <Caption1>
-              {props.variant === 'schema'
-                ? 'Send as JSON to POST https://graph.microsoft.com/v1.0/schemaExtensions'
-                : tab === 'graph'
-                  ? 'Send as JSON to POST /applications/{id}/extensionProperties'
-                  : 'Paste into your app registration manifest (extensionProperties)'}
-            </Caption1>
+            <Caption1>{caption}</Caption1>
             <Textarea
               className={styles.code}
               rows={14}

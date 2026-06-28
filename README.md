@@ -23,6 +23,8 @@ The portal is designed for administrators and identity engineers who need a safe
     - [Directory extension management](#directory-extension-management)
     - [Open extension management](#open-extension-management)
     - [Tools](#tools)
+    - [Personalization and productivity](#personalization-and-productivity)
+    - [Demo mode](#demo-mode)
 - [Architecture](#architecture)
 - [Authentication model](#authentication-model)
     - [Tenant switcher](#tenant-switcher)
@@ -74,10 +76,23 @@ The portal is designed for administrators and identity engineers who need a safe
 
 ### Tools
 
-- **Usage monitor** — probes supported directory object types to estimate where extension values are present, and lets you expand any extension to drill into the actual objects that hold a value and the data stored. The object list is masked by default with a reveal toggle, pages on demand, and can be exported to CSV or JSON.
+- **Usage monitor** — probes supported directory object types to estimate where extension values are present, and lets you expand any extension to drill into the actual objects that hold a value and the data stored. The object list is masked by default with a reveal toggle, pages on demand, and can be exported to CSV or JSON. It also flags **deprecated definitions that still hold values**, so you can plan a migration before removing them.
 - **Validate value** — tests whether proposed extension values match the extension definition and target object behavior.
-- **Manifest snippet** — generates app manifest snippets for extension definitions.
+- **Manifest snippet** — generates ready-to-use snippets for each definition: a Microsoft Graph **JSON** body, a **Microsoft Graph PowerShell** command, the **app registration manifest** shape (directory extensions), and a raw **HTTP** request.
 - **Audit log** — helps find extension-related directory audit events.
+
+### Personalization and productivity
+
+- **Skins** — restyle the entire portal with one of five themes (Fluent, Retro, 8-bit, Synthwave, Newsprint), each with light and dark variants. Your choice is remembered.
+- **Command palette** — press <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>K</kbd> to jump to any page, switch skin/theme/mode, start a tour, or run demo actions.
+- **Guided tours** — a Help (`?`) button gives every page a fresh walkthrough that spotlights the relevant controls. It works in both the demo and a real tenant, and only auto-runs once when you enter the demo.
+- **Keyboard shortcuts** — <kbd>/</kbd> focus search, <kbd>n</kbd> new, <kbd>e</kbd> toggle Edit mode, <kbd>?</kbd> About (which lists every shortcut).
+
+### Demo mode
+
+- **Explore without signing in** — the landing page offers a one-click live demo backed by a fully simulated tenant (sample schema, directory, and open extensions, plus usage and audit data). Nothing is ever sent to Microsoft Graph.
+- All write actions (create, assign, edit, delete) are simulated against an in-memory store, so the portal behaves like a real tenant for the browser session.
+- **Reset demo data** restores the original sample tenant. **Sign in to a real tenant** leaves the demo for a real Entra sign-in — a one-way door, with no path from a real session back into the demo.
 
 ## Architecture
 

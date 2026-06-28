@@ -73,6 +73,7 @@ import {
   timestampSuffix,
 } from '@/utils/exportImport';
 import { usePageShortcut } from '@/hooks/useKeyboardShortcuts';
+import { usePageTour } from '@/components/tour/TourProvider';
 
 const useStyles = makeStyles({
   header: {
@@ -188,6 +189,19 @@ export function SchemaExtensionsPage() {
     }
   });
   usePageShortcut('eem:focus-search', () => searchInputRef.current?.focus());
+
+  usePageTour([
+    {
+      title: 'Schema extensions',
+      body: 'This is the global /schemaExtensions collection. Refresh, export or import definitions here, and create new ones in Edit mode.',
+      target: 'schema-actions',
+    },
+    {
+      title: 'Filter & search',
+      body: 'Narrow the list by lifecycle status or owner appId, and search the rows already loaded.',
+      target: 'schema-filters',
+    },
+  ]);
 
   const rows = useMemo(() => {
     const list = data?.pages.flatMap((p) => p.items) ?? [];
@@ -432,7 +446,7 @@ export function SchemaExtensionsPage() {
             title="Learn more about schema extensions"
           />
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 8 }} data-tour="schema-actions">
           <Button
             appearance="subtle"
             icon={<ArrowSync24Regular />}
@@ -523,7 +537,7 @@ export function SchemaExtensionsPage() {
         owner appId to narrow the list to the definitions you care about.
       </Caption1>
 
-      <div className={styles.filters}>
+      <div className={styles.filters} data-tour="schema-filters">
         <Input
           ref={searchInputRef as unknown as React.Ref<HTMLInputElement>}
           placeholder="Search loaded rows (id, description, target type) — press / to focus"

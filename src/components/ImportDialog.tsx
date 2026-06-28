@@ -124,7 +124,6 @@ export function ImportDialog<T>({
         ok++;
       } catch (e) {
         failed++;
-        // eslint-disable-next-line no-console
         console.error(`Import failed for ${row.key}`, e);
       }
     }

@@ -3,6 +3,8 @@ import {
   Body1,
   Button,
   Caption1,
+  MessageBar,
+  MessageBarBody,
   ProgressBar,
   Title2,
   Tooltip,
@@ -28,6 +30,7 @@ import {
 import { useExtensionsAggregates } from '@/hooks/useExtensionsAggregates';
 import { useBulkUsageProbe } from '@/api/usage';
 import { useAppToast } from '@/hooks/useAppToast';
+import { ErrorMessageBar } from '@/components/ErrorMessageBar';
 
 const useStyles = makeStyles({
   page: { display: 'flex', flexDirection: 'column', gap: '16px' },
@@ -88,6 +91,14 @@ export function UsagePage() {
   }, [agg.loading, agg.total]);
 
   const result = probe.data;
+  const deprecatedInUse = result
+    ? result.entries.filter(
+        (e) =>
+          e.kind === 'schema' &&
+          e.inUse &&
+          agg.schemas.find((s) => s.id === e.name)?.status === 'Deprecated',
+      )
+    : [];
   const totalResources = result
     ? Object.values(result.byTarget).reduce((a, b) => a + b, 0)
     : 0;
@@ -139,6 +150,20 @@ export function UsagePage() {
         target type, so you can see at a glance what's being used and what's
         dormant. The probe runs automatically on entry.
       </Body1>
+
+      <ErrorMessageBar error={agg.error} title="Couldn't load extension data" />
+
+      {deprecatedInUse.length > 0 && (
+        <MessageBar intent="warning">
+          <MessageBarBody>
+            <strong>Deprecated, but still in use:</strong>{' '}
+            {deprecatedInUse.map((e) => e.name).join(', ')} —{' '}
+            {deprecatedInUse.reduce((a, e) => a + e.total, 0)} resource(s) still
+            carry values. Plan a migration before removing these definitions.
+          </MessageBarBody>
+        </MessageBar>
+      )}
+
       {probe.isPending && (
         <ProgressBar
           value={progress ? progress.done / progress.total : undefined}
