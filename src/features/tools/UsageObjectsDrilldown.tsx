@@ -6,6 +6,7 @@ import {
   Caption1,
   Dropdown,
   Option,
+  SearchBox,
   Spinner,
   Switch,
   Table,
@@ -51,6 +52,7 @@ const useStyles = makeStyles({
     flexWrap: 'wrap',
   },
   targetField: { display: 'flex', flexDirection: 'column', gap: '2px' },
+  search: { minWidth: '220px' },
   spacer: { flex: '1 1 auto' },
   meta: {
     display: 'flex',
@@ -134,6 +136,9 @@ export function UsageObjectsDrilldown({ source }: { source: OverviewExtension })
     targets.length > 1 ? '__all__' : (targets[0] ?? ''),
   );
   const [reveal, setReveal] = useState(false);
+  const [search, setSearch] = useState('');
+  const [sortKey, setSortKey] = useState<string | null>(null);
+  const [sortAsc, setSortAsc] = useState(true);
 
   const isAll = target === '__all__';
   // canProbe only depends on the extension variant, not the specific target.
@@ -168,6 +173,60 @@ export function UsageObjectsDrilldown({ source }: { source: OverviewExtension })
     rows.forEach((r) => Object.keys(r.values).forEach((k) => set.add(k)));
     return Array.from(set);
   }, [rows]);
+
+  const hasFilter = search.trim() !== '';
+
+  const visibleRows = useMemo(() => {
+    const needle = search.trim().toLowerCase();
+    let out: (ExtensionObjectRow | ExtensionObjectRowWithTarget)[] = rows;
+    if (needle) {
+      out = rows.filter((r) => {
+        const rowTarget = (r as ExtensionObjectRowWithTarget).target ?? '';
+        const hay = [
+          rowTarget,
+          r.displayName ?? '',
+          r.identifier ?? '',
+          r.id,
+          ...Object.values(r.values).map((v) => formatValue(v)),
+        ]
+          .join(' ')
+          .toLowerCase();
+        return hay.includes(needle);
+      });
+    }
+    if (sortKey) {
+      const dir = sortAsc ? 1 : -1;
+      const keyOf = (
+        r: ExtensionObjectRow | ExtensionObjectRowWithTarget,
+      ): string => {
+        if (sortKey === '__target__')
+          return (r as ExtensionObjectRowWithTarget).target ?? '';
+        if (sortKey === '__object__') return r.displayName ?? '';
+        if (sortKey === '__identifier__') return r.identifier ?? '';
+        return formatValue(r.values[sortKey]);
+      };
+      out = [...out].sort(
+        (a, b) =>
+          keyOf(a).localeCompare(keyOf(b), undefined, {
+            numeric: true,
+            sensitivity: 'base',
+          }) * dir,
+      );
+    }
+    return out;
+  }, [rows, search, sortKey, sortAsc]);
+
+  const toggleSort = (key: string) => {
+    if (sortKey === key) {
+      setSortAsc((v) => !v);
+    } else {
+      setSortKey(key);
+      setSortAsc(true);
+    }
+  };
+
+  const sortFor = (key: string): 'ascending' | 'descending' | undefined =>
+    sortKey === key ? (sortAsc ? 'ascending' : 'descending') : undefined;
 
   if (targets.length === 0) {
     return (
@@ -219,6 +278,18 @@ export function UsageObjectsDrilldown({ source }: { source: OverviewExtension })
           </Dropdown>
         </div>
 
+        <div className={styles.targetField}>
+          <Caption1>Filter</Caption1>
+          <SearchBox
+            size="small"
+            className={styles.search}
+            value={search}
+            placeholder="Name, ID, or value"
+            onChange={(_, d) => setSearch(d.value)}
+            aria-label="Filter objects by name, identifier, ID, or value"
+          />
+        </div>
+
         <Tooltip content="Refresh this list" relationship="label">
           <Button
             size="small"
@@ -244,9 +315,9 @@ export function UsageObjectsDrilldown({ source }: { source: OverviewExtension })
             <Spinner size="tiny" label="Loading…" />
           ) : (
             <Caption1>
-              {rows.length}
-              {!isAll && typeof total === 'number' ? ` of ${total}` : ''} object
-              {rows.length === 1 ? '' : 's'}
+              {hasFilter
+                ? `${visibleRows.length} of ${rows.length} loaded object${visibleRows.length === 1 ? '' : 's'}`
+                : `${rows.length}${!isAll && typeof total === 'number' ? ` of ${total}` : ''} object${rows.length === 1 ? '' : 's'}`}
               {isAll && multiQ.isCapped ? ' (capped at 200 per target type)' : ''}
             </Caption1>
           )}
@@ -255,11 +326,11 @@ export function UsageObjectsDrilldown({ source }: { source: OverviewExtension })
               size="small"
               appearance="subtle"
               icon={<ArrowDownload16Regular />}
-              disabled={rows.length === 0}
+              disabled={visibleRows.length === 0}
               onClick={() =>
                 downloadCsv(
                   `usage-${exportName}-${isAll ? 'all' : target}-${timestampSuffix()}.csv`,
-                  flattenForExport(rows),
+                  flattenForExport(visibleRows),
                 )
               }
             >
@@ -271,11 +342,11 @@ export function UsageObjectsDrilldown({ source }: { source: OverviewExtension })
               size="small"
               appearance="subtle"
               icon={<ArrowDownload16Regular />}
-              disabled={rows.length === 0}
+              disabled={visibleRows.length === 0}
               onClick={() =>
                 downloadJson(
                   `usage-${exportName}-${isAll ? 'all' : target}-${timestampSuffix()}.json`,
-                  rows,
+                  visibleRows,
                 )
               }
             >
@@ -285,7 +356,7 @@ export function UsageObjectsDrilldown({ source }: { source: OverviewExtension })
         </div>
       </div>
 
-      {reveal && rows.length > 0 && (
+      {reveal && visibleRows.length > 0 && (
         <Caption1 className={styles.warn}>
           <Warning16Regular />
           Values may contain personal data. Avoid exporting or sharing
@@ -303,21 +374,53 @@ export function UsageObjectsDrilldown({ source }: { source: OverviewExtension })
         <Caption1 className={styles.note}>
           No {isAll ? '' : `${target} `}objects currently hold a value for this extension.
         </Caption1>
+      ) : visibleRows.length === 0 ? (
+        <Caption1 className={styles.note}>
+          No objects match “{search.trim()}”.
+        </Caption1>
       ) : (
         <div className={styles.tableWrap}>
-          <Table size="small" aria-label={`Objects using ${exportName} on ${isAll ? 'all target types' : target}`}>
+          <Table
+            size="small"
+            sortable
+            aria-label={`Objects using ${exportName} on ${isAll ? 'all target types' : target}`}
+          >
             <TableHeader>
               <TableRow>
-                {isAll && <TableHeaderCell style={{ width: 120 }}>Target</TableHeaderCell>}
-                <TableHeaderCell>Object</TableHeaderCell>
-                <TableHeaderCell>Identifier</TableHeaderCell>
+                {isAll && (
+                  <TableHeaderCell
+                    style={{ width: 120 }}
+                    sortDirection={sortFor('__target__')}
+                    onClick={() => toggleSort('__target__')}
+                  >
+                    Target
+                  </TableHeaderCell>
+                )}
+                <TableHeaderCell
+                  sortDirection={sortFor('__object__')}
+                  onClick={() => toggleSort('__object__')}
+                >
+                  Object
+                </TableHeaderCell>
+                <TableHeaderCell
+                  sortDirection={sortFor('__identifier__')}
+                  onClick={() => toggleSort('__identifier__')}
+                >
+                  Identifier
+                </TableHeaderCell>
                 {valueColumns.map((c) => (
-                  <TableHeaderCell key={c}>{c}</TableHeaderCell>
+                  <TableHeaderCell
+                    key={c}
+                    sortDirection={sortFor(c)}
+                    onClick={() => toggleSort(c)}
+                  >
+                    {c}
+                  </TableHeaderCell>
                 ))}
               </TableRow>
             </TableHeader>
             <TableBody>
-              {rows.map((r) => {
+              {visibleRows.map((r) => {
                 const rowTarget = isAll
                   ? (r as ExtensionObjectRowWithTarget).target
                   : target;
