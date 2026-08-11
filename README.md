@@ -8,7 +8,13 @@
 ![Open issues](https://img.shields.io/github/issues/Noble-Effeciency13/EntraExtensionManager)
 
 <p align="center">
-  <a href="https://www.buymeacoffee.com/chanceofsecurity"><img src="https://img.buymeacoffee.com/button-api/?text=Buy me a coffee&emoji=☕&slug=chanceofsecurity&button_colour=fca158&font_colour=000000&font_family=Inter&outline_colour=000000&coffee_colour=FFDD00" height="30" /></a>
+  <a href="https://www.buymeacoffee.com/chanceofsecurity">
+    <img
+      src="https://cdn.buymeacoffee.com/buttons/v2/arial-orange.png"
+      alt="Buy Me a Coffee"
+      height="35"
+    />
+  </a>
 </p>
 
 Entra Extensions Manager is a managed, browser-based portal for discovering, reviewing, and managing Microsoft Entra ID extension definitions through Microsoft Graph.
