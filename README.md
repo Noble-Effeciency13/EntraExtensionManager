@@ -226,9 +226,9 @@ Self-hosting requires your own Microsoft Entra app registration.
 5. Grant **admin consent** for the directory-wide permissions to avoid per-user consent prompts.
 6. Copy the **Application (client) ID** — you will place it in `config.js` (release package) or `VITE_AAD_CLIENT_ID` (source build).
 
-### Downloadable release package
+### Download release package
 
-Each GitHub release can include a ZIP asset named like `entra-extensions-manager-v1.0.0.zip`. Downloads of that release asset are counted by the downloads badge at the top of this README.
+Each GitHub release includes a ZIP asset named like `entra-extensions-manager-v1.0.0.zip`.
 
 To self-host from a release package:
 
@@ -239,8 +239,6 @@ To self-host from a release package:
 5. Register the final hosted URL as a SPA redirect URI in your Entra app registration.
 
 > **Important:** you must edit `config.js`. If the `aadClientId` placeholder is left unchanged, a release build has no build-time fallback and sign-in fails with `AADSTS900144: The request body must contain the following parameter: 'client_id'`.
-
-GitHub's automatically generated **Source code** ZIP/TAR downloads are not counted by the release downloads badge. The badge counts uploaded release assets, such as the self-hostable ZIP package.
 
 ### Runtime configuration
 
