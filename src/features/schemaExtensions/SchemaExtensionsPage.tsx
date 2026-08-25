@@ -39,6 +39,7 @@ import {
   DataPie24Regular,
   Delete24Regular,
   Edit24Regular,
+  Eye24Regular,
   History24Regular,
   Info24Regular,
   MoreHorizontal24Regular,
@@ -55,6 +56,7 @@ import {
 import type { SchemaExtension, SchemaExtensionStatus } from '@/types/extensions';
 import { StatusBadge } from './StatusBadge';
 import { SchemaExtensionEditor } from './SchemaExtensionEditor';
+import { SchemaExtensionDetailsDialog } from './SchemaExtensionDetailsDialog';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { EmptyState } from '@/components/EmptyState';
 import { ExtensionInfoDialog } from '@/components/ExtensionInfoDialog';
@@ -99,6 +101,12 @@ const useStyles = makeStyles({
     borderRadius: tokens.borderRadiusLarge,
     padding: '8px',
     boxShadow: tokens.shadow4,
+    minWidth: 0,
+    maxWidth: '100%',
+  },
+  gridScroll: {
+    minWidth: 0,
+    overflowX: 'auto',
   },
   loadMore: {
     display: 'flex',
@@ -167,6 +175,7 @@ export function SchemaExtensionsPage() {
 
   const [editorOpen, setEditorOpen] = useState(false);
   const [editing, setEditing] = useState<SchemaExtension | null>(null);
+  const [detailsOf, setDetailsOf] = useState<SchemaExtension | null>(null);
   const [deleting, setDeleting] = useState<SchemaExtension | null>(null);
   const [promoting, setPromoting] = useState<{
     ext: SchemaExtension;
@@ -347,6 +356,12 @@ export function SchemaExtensionsPage() {
             </MenuTrigger>
             <MenuPopover>
               <MenuList>
+                <MenuItem
+                  icon={<Eye24Regular />}
+                  onClick={() => setDetailsOf(item)}
+                >
+                  View properties
+                </MenuItem>
                 <MenuItem
                   icon={<DataPie24Regular />}
                   onClick={() => setUsageOf(item)}
@@ -656,35 +671,44 @@ export function SchemaExtensionsPage() {
             </MessageBar>
           )}
           <div className={styles.card}>
-            <DataGrid
-              items={rows}
-              columns={displayedColumns}
-              sortable
-              resizableColumns
-              columnSizingOptions={columnSizingOptions}
-              getRowId={(item) => item.id}
-              focusMode="composite"
-              selectionMode={isEdit ? 'multiselect' : undefined}
-              selectedItems={selected}
-              onSelectionChange={(_, d) =>
-                setSelected(d.selectedItems as Set<string>)
-              }
-            >
-              <DataGridHeader>
-                <DataGridRow>
-                  {({ renderHeaderCell }) => (
-                    <DataGridHeaderCell>{renderHeaderCell()}</DataGridHeaderCell>
-                  )}
-                </DataGridRow>
-              </DataGridHeader>
-              <DataGridBody<SchemaExtension>>
-                {({ item, rowId }) => (
-                  <DataGridRow<SchemaExtension> key={rowId}>
-                    {({ renderCell }) => <DataGridCell>{renderCell(item)}</DataGridCell>}
+            <div className={styles.gridScroll}>
+              <DataGrid
+                items={rows}
+                columns={displayedColumns}
+                sortable
+                resizableColumns
+                columnSizingOptions={columnSizingOptions}
+                getRowId={(item) => item.id}
+                focusMode="composite"
+                selectionMode={isEdit ? 'multiselect' : undefined}
+                selectedItems={selected}
+                onSelectionChange={(_, d) =>
+                  setSelected(d.selectedItems as Set<string>)
+                }
+              >
+                <DataGridHeader>
+                  <DataGridRow>
+                    {({ renderHeaderCell }) => (
+                      <DataGridHeaderCell>{renderHeaderCell()}</DataGridHeaderCell>
+                    )}
                   </DataGridRow>
-                )}
-              </DataGridBody>
-            </DataGrid>
+                </DataGridHeader>
+                <DataGridBody<SchemaExtension>>
+                  {({ item, rowId }) => (
+                    <DataGridRow<SchemaExtension>
+                      key={rowId}
+                      onDoubleClick={() => {
+                        window.getSelection()?.removeAllRanges();
+                        setDetailsOf(item);
+                      }}
+                      title="Double-click to view details"
+                    >
+                      {({ renderCell }) => <DataGridCell>{renderCell(item)}</DataGridCell>}
+                    </DataGridRow>
+                  )}
+                </DataGridBody>
+              </DataGrid>
+            </div>
           </div>
           {hasNextPage && (
             <div className={styles.loadMore}>
@@ -713,6 +737,19 @@ export function SchemaExtensionsPage() {
         open={infoOpen}
         variant="schema"
         onOpenChange={setInfoOpen}
+      />
+
+      <SchemaExtensionDetailsDialog
+        open={!!detailsOf}
+        ext={detailsOf}
+        canEdit={isEdit}
+        onOpenChange={(o) => !o && setDetailsOf(null)}
+        onEdit={() => {
+          if (!detailsOf) return;
+          setEditing(detailsOf);
+          setEditorOpen(true);
+          setDetailsOf(null);
+        }}
       />
 
       <UsageDialog
