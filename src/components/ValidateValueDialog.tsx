@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Button,
   Caption1,
+  Combobox,
   Dialog,
   DialogActions,
   DialogBody,
@@ -17,8 +18,13 @@ import {
   Spinner,
   Textarea,
   makeStyles,
+  tokens,
 } from '@fluentui/react-components';
 import { useDryRunExtensionValue } from '@/api/dryRun';
+import {
+  useDirectoryObjectSearch,
+  type DirectoryObjectResult,
+} from '@/api/directoryObjects';
 import { useAppToast } from '@/hooks/useAppToast';
 
 const useStyles = makeStyles({
@@ -31,6 +37,15 @@ const useStyles = makeStyles({
     fontSize: '12px',
     maxHeight: '220px',
     overflow: 'auto',
+  },
+  listbox: { maxHeight: 'min(40vh, 280px)', overflowY: 'auto' },
+  optionLabel: { display: 'flex', flexDirection: 'column', minWidth: 0 },
+  optionSecondary: {
+    fontSize: tokens.fontSizeBase100,
+    color: tokens.colorNeutralForeground3,
+    fontFamily: tokens.fontFamilyMonospace,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
   },
 });
 
@@ -58,6 +73,9 @@ export function ValidateValueDialog({
   const toast = useAppToast();
 
   const [targetType, setTargetType] = useState(targetTypes[0] ?? 'User');
+  const [searchText, setSearchText] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
+  const [selectedObject, setSelectedObject] = useState<DirectoryObjectResult | null>(null);
   const [targetId, setTargetId] = useState('');
   const [valueText, setValueText] = useState(
     isSchema
@@ -69,6 +87,47 @@ export function ValidateValueDialog({
       : 'sample-value',
   );
   const [output, setOutput] = useState<string | null>(null);
+
+  useEffect(() => {
+    setSearchText('');
+    setDebouncedQuery('');
+    setSelectedObject(null);
+    setTargetId('');
+  }, [targetType]);
+
+  useEffect(() => {
+    const h = setTimeout(() => setDebouncedQuery(searchText), 300);
+    return () => clearTimeout(h);
+  }, [searchText]);
+
+  const searchQ = useDirectoryObjectSearch(
+    targetType as 'User' | 'Group' | 'Device' | 'Application' | 'AdministrativeUnit',
+    debouncedQuery,
+    true,
+  );
+
+  const GUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const looksLikeGuid = GUID_RE.test(searchText.trim());
+  const looksLikeUpn =
+    targetType === 'User' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(searchText.trim());
+  const canUseDirect = looksLikeGuid || looksLikeUpn;
+
+  const commitOption = (optionValue?: string) => {
+    if (!optionValue || optionValue.startsWith('__hint')) return;
+    if (optionValue.startsWith('__direct:')) {
+      const id = optionValue.slice('__direct:'.length).trim();
+      setSelectedObject({ id, displayName: id });
+      setSearchText(id);
+      setTargetId(id);
+      return;
+    }
+    const match = searchQ.data?.find((r) => r.id === optionValue);
+    if (match) {
+      setSelectedObject(match);
+      setSearchText(match.displayName);
+      setTargetId(match.id);
+    }
+  };
 
   const run = async () => {
     setOutput(null);
@@ -136,22 +195,66 @@ export function ValidateValueDialog({
             </Field>
 
             <Field
-              label="Target object id"
+              label="Target object"
               hint={
                 targetType === 'User'
-                  ? 'Object id or userPrincipalName'
-                  : 'Object id (GUID)'
+                  ? 'Search by name or UPN, or paste an object id'
+                  : 'Search by name, or paste an object id'
               }
             >
-              <Input
-                value={targetId}
-                onChange={(_, d) => setTargetId(d.value)}
+              <Combobox
                 placeholder={
                   targetType === 'User'
-                    ? 'user@contoso.com or 00000000-0000-…'
-                    : '00000000-0000-…'
+                    ? 'Type name, UPN, or paste a GUID…'
+                    : 'Type name or paste a GUID…'
                 }
-              />
+                value={selectedObject ? selectedObject.displayName : searchText}
+                selectedOptions={selectedObject ? [selectedObject.id] : []}
+                onInput={(e) => {
+                  setSearchText((e.target as HTMLInputElement).value);
+                  if (selectedObject) {
+                    setSelectedObject(null);
+                    setTargetId('');
+                  }
+                }}
+                onOptionSelect={(_, d) => commitOption(d.optionValue)}
+                positioning={{ autoSize: 'height-always', position: 'below', align: 'start' }}
+                listbox={{ className: styles.listbox }}
+              >
+                {canUseDirect && (
+                  <Option value={`__direct:${searchText.trim()}`} text={searchText.trim()}>
+                    Look up "{searchText.trim()}" directly
+                  </Option>
+                )}
+                {searchQ.isFetching ? (
+                  <Option value="__hint_loading" disabled text="Searching">
+                    Searching…
+                  </Option>
+                ) : searchQ.error ? (
+                  <Option value="__hint_error" disabled text="Error">
+                    Search failed: {(searchQ.error as Error).message}
+                  </Option>
+                ) : debouncedQuery.trim().length < 2 ? (
+                  <Option value="__hint_min" disabled text="Keep typing">
+                    Type at least 2 characters to search…
+                  </Option>
+                ) : (searchQ.data?.length ?? 0) === 0 ? (
+                  <Option value="__hint_empty" disabled text="No matches">
+                    No matches
+                  </Option>
+                ) : (
+                  searchQ.data!.map((r) => (
+                    <Option key={r.id} value={r.id} text={r.displayName}>
+                      <div className={styles.optionLabel}>
+                        <span>{r.displayName}</span>
+                        {r.secondary && (
+                          <span className={styles.optionSecondary}>{r.secondary}</span>
+                        )}
+                      </div>
+                    </Option>
+                  ))
+                )}
+              </Combobox>
             </Field>
 
             <Field label={isSchema ? 'Value JSON' : 'Value'}>

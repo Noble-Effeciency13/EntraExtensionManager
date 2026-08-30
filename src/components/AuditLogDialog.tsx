@@ -17,7 +17,10 @@ import {
   TableRow,
   makeStyles,
 } from '@fluentui/react-components';
-import { useExtensionAuditLog } from '@/api/auditLogs';
+import {
+  summarizeAuditEntry,
+  useExtensionAuditLog,
+} from '@/api/auditLogs';
 
 const useStyles = makeStyles({
   surface: {
@@ -56,8 +59,8 @@ export function AuditLogDialog({ open, onOpenChange, extensionId, label }: Props
           </DialogTitle>
           <DialogContent className={styles.body}>
             <Caption1>
-              Recent <code>/auditLogs/directoryAudits</code> entries that target
-              this extension id. Limited to the last 50 events.
+              Recent directory-audit events that mention this extension name or ID,
+              including direct changes and object writes that carry the extension.
             </Caption1>
             {q.isLoading ? (
               <Spinner label="Loading audit entries…" />
@@ -72,35 +75,42 @@ export function AuditLogDialog({ open, onOpenChange, extensionId, label }: Props
                     <TableHeaderCell>When</TableHeaderCell>
                     <TableHeaderCell>Activity</TableHeaderCell>
                     <TableHeaderCell>Initiator</TableHeaderCell>
+                    <TableHeaderCell>Target</TableHeaderCell>
+                    <TableHeaderCell>Detail</TableHeaderCell>
                     <TableHeaderCell>Result</TableHeaderCell>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {(q.data ?? []).map((e) => (
-                    <TableRow key={e.id}>
-                      <TableCell>
-                        {new Date(e.activityDateTime).toLocaleString()}
-                      </TableCell>
-                      <TableCell>{e.activityDisplayName}</TableCell>
-                      <TableCell>
-                        {e.initiatedBy?.user?.displayName ??
-                          e.initiatedBy?.user?.userPrincipalName ??
-                          '—'}
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          appearance="tint"
-                          color={
-                            e.result === 'success' || e.result === 'Success'
-                              ? 'success'
-                              : 'danger'
-                          }
-                        >
-                          {e.result}
-                        </Badge>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {(q.data ?? []).map((e) => {
+                    const summary = summarizeAuditEntry(e, extensionId, label);
+                    return (
+                      <TableRow key={e.id}>
+                        <TableCell>
+                          {new Date(e.activityDateTime).toLocaleString()}
+                        </TableCell>
+                        <TableCell>{summary.activity}</TableCell>
+                        <TableCell>
+                          {e.initiatedBy?.user?.displayName ??
+                            e.initiatedBy?.user?.userPrincipalName ??
+                            '—'}
+                        </TableCell>
+                        <TableCell>{summary.target}</TableCell>
+                        <TableCell>{summary.detail}</TableCell>
+                        <TableCell>
+                          <Badge
+                            appearance="tint"
+                            color={
+                              e.result === 'success' || e.result === 'Success'
+                                ? 'success'
+                                : 'danger'
+                            }
+                          >
+                            {e.result}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             )}

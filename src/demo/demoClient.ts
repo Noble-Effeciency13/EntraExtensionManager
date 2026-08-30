@@ -140,6 +140,11 @@ function routeGet(req: DemoRequestState): unknown {
     return { value: store.directory.organization.map(objectSummary) };
   }
 
+  // /auditLogs/directoryAudits  -> seeded audit history for demo mode
+  if (path === '/auditLogs/directoryAudits') {
+    return { value: store.audit };
+  }
+
   // /{collection}/{id}/extensions[/{name}]  -> open extensions
   const extMatch = path.match(
     /^\/(users|groups|devices|organization)\/([^/]+)\/extensions(?:\/(.+))?$/,

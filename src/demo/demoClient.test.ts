@@ -57,6 +57,15 @@ describe('demo graph client', () => {
     expect(n).toBeGreaterThan(0);
   });
 
+  it('returns seeded audit log entries for demo mode', async () => {
+    const res = (await client().api('/auditLogs/directoryAudits').get()) as {
+      value: Array<{ activityDisplayName: string; result: string }>;
+    };
+    expect(res.value.length).toBeGreaterThan(0);
+    expect(res.value[0].activityDisplayName).toBeTruthy();
+    expect(res.value.some((entry) => entry.result === 'success')).toBe(true);
+  });
+
   it('returns an empty collection for unknown routes', async () => {
     const res = (await client().api('/unknown/route').get()) as {
       value: unknown[];

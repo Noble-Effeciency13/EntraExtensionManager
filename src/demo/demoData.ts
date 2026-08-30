@@ -68,6 +68,12 @@ export interface DemoAuditEntry {
   result: string;
   initiatedBy?: { user?: { userPrincipalName?: string; displayName?: string } };
   targetResources?: Array<{ id?: string; displayName?: string; type?: string }>;
+  modifiedProperties?: Array<{
+    displayName?: string;
+    oldValue?: unknown;
+    newValue?: unknown;
+  }>;
+  additionalDetails?: Array<{ key?: string; value?: string }>;
 }
 
 export interface DemoStore {
@@ -459,16 +465,48 @@ function seed(): DemoStore {
   ];
 
   const audit: DemoAuditEntry[] = [
-    auditEntry(0, 'Add schema extension definition', 'extlearn01_courses', 'SchemaExtension'),
-    auditEntry(1, 'Update schema extension definition', 'exthr03_employeeProfile', 'SchemaExtension'),
-    auditEntry(2, 'Assign extension value', 'extlearn01_courses', 'User'),
-    auditEntry(4, 'Add extension property', HR_REGION, 'ExtensionProperty'),
-    auditEntry(6, 'Update schema extension status', 'extproj04_project', 'SchemaExtension'),
-    auditEntry(7, 'Assign extension value', ASSET_CLASS, 'Device'),
-    auditEntry(9, 'Add schema extension definition', 'extsec06_clearance', 'SchemaExtension'),
-    auditEntry(11, 'Add extension property', HR_COSTCENTER, 'ExtensionProperty'),
-    auditEntry(14, 'Add schema extension definition', 'extasset02_assetTag', 'SchemaExtension'),
-    auditEntry(18, 'Delete schema extension definition', 'extold00_legacy', 'SchemaExtension'),
+    auditEntry(0, 'Add schema extension definition', 'extlearn01_courses', 'SchemaExtension', {
+      displayName: 'extlearn01_courses',
+      newValue: 'Available',
+    }),
+    auditEntry(1, 'Update schema extension definition', 'exthr03_employeeProfile', 'SchemaExtension', {
+      displayName: 'exthr03_employeeProfile',
+      newValue: 'InDevelopment',
+    }),
+    auditEntry(2, 'Update user', 'user-alex', 'User', {
+      displayName: 'extension_22222222222222222222222222222222_employeeRegion',
+      oldValue: 'AMER',
+      newValue: 'EMEA',
+    }),
+    auditEntry(4, 'Add extension property', HR_REGION, 'ExtensionProperty', {
+      displayName: HR_REGION,
+      newValue: 'String',
+    }),
+    auditEntry(6, 'Update schema extension status', 'extproj04_project', 'SchemaExtension', {
+      displayName: 'extproj04_project',
+      newValue: 'Deprecated',
+    }),
+    auditEntry(7, 'Update device', 'device-kiosk-014', 'Device', {
+      displayName: ASSET_CLASS,
+      oldValue: 'Kiosk',
+      newValue: 'Security kiosk',
+    }),
+    auditEntry(9, 'Add schema extension definition', 'extsec06_clearance', 'SchemaExtension', {
+      displayName: 'extsec06_clearance',
+      newValue: 'Available',
+    }),
+    auditEntry(11, 'Add extension property', HR_COSTCENTER, 'ExtensionProperty', {
+      displayName: HR_COSTCENTER,
+      newValue: 'Integer',
+    }),
+    auditEntry(14, 'Add schema extension definition', 'extasset02_assetTag', 'SchemaExtension', {
+      displayName: 'extasset02_assetTag',
+      newValue: 'InDevelopment',
+    }),
+    auditEntry(18, 'Delete schema extension definition', 'extold00_legacy', 'SchemaExtension', {
+      displayName: 'extold00_legacy',
+      oldValue: 'Available',
+    }),
   ];
 
   return {
@@ -493,6 +531,11 @@ function auditEntry(
   activity: string,
   targetId: string,
   targetType: string,
+  modifiedProperty?: {
+    displayName: string;
+    oldValue?: unknown;
+    newValue?: unknown;
+  },
 ): DemoAuditEntry {
   return {
     id: `audit-${targetId}-${daysAgo}`,
@@ -507,6 +550,10 @@ function auditEntry(
       },
     },
     targetResources: [{ id: targetId, displayName: targetId, type: targetType }],
+    modifiedProperties: modifiedProperty ? [modifiedProperty] : undefined,
+    additionalDetails: modifiedProperty
+      ? [{ key: 'extension', value: modifiedProperty.displayName }]
+      : undefined,
   };
 }
 
