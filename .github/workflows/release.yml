@@ -59,9 +59,7 @@ jobs:
           if [ -f "${notes_file}" ]; then
             cp "${notes_file}" release-notes.md
           else
-            cat <<'EOF' > release-notes.md
-            Initial release.
-            EOF
+            echo "Initial release." > release-notes.md
           fi
 
       - name: Publish GitHub release
