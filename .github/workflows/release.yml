@@ -39,8 +39,30 @@ jobs:
         run: |
           tag="${{ github.event.inputs.tag || github.ref_name }}"
           asset="entra-extensions-manager-${tag}.zip"
-          cd dist
-          zip -r "../${asset}" .
+          package_dir="release-package"
+          rm -rf "${package_dir}"
+          mkdir -p "${package_dir}"
+
+          cp -R dist/. "${package_dir}/"
+          cp public/config.js "${package_dir}/config.js"
+          cp README.md "${package_dir}/README.md"
+          cp LICENSE "${package_dir}/LICENSE"
+          cp staticwebapp.config.json "${package_dir}/staticwebapp.config.json"
+          cp .env.example "${package_dir}/.env.example"
+
+          (cd "${package_dir}" && zip -r "../${asset}" .)
+
+      - name: Prepare release notes
+        run: |
+          tag="${{ github.event.inputs.tag || github.ref_name }}"
+          notes_file=".github/release-notes/${tag}.md"
+          if [ -f "${notes_file}" ]; then
+            cp "${notes_file}" release-notes.md
+          else
+            cat <<'EOF' > release-notes.md
+            Initial release.
+            EOF
+          fi
 
       - name: Publish GitHub release
         env:
@@ -50,6 +72,7 @@ jobs:
           asset="entra-extensions-manager-${RELEASE_TAG}.zip"
           if gh release view "${RELEASE_TAG}" >/dev/null 2>&1; then
             gh release upload "${RELEASE_TAG}" "${asset}" --clobber
+            gh release edit "${RELEASE_TAG}" --title "${RELEASE_TAG}" --notes-file release-notes.md
           else
-            gh release create "${RELEASE_TAG}" "${asset}" --title "${RELEASE_TAG}" --generate-notes --target "${GITHUB_SHA}"
+            gh release create "${RELEASE_TAG}" "${asset}" --title "${RELEASE_TAG}" --notes-file release-notes.md --target "${GITHUB_SHA}"
           fi
