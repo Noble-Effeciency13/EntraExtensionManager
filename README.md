@@ -313,4 +313,4 @@ Do not share access tokens, client secrets, unsanitized audit log exports, or se
 ## Further reading
 
 - **[Choosing the Right Extension Type in Microsoft Entra](https://www.chanceofsecurity.com/post/choosing-the-right-extension-type-in-microsoft-entra)** — not sure whether to use a schema extension, directory extension, or open extension? This article walks through the differences, tradeoffs, and when to reach for each type.
-- **Entra Extensions Manager — a walkthrough** *(article coming soon)* — a hands-on look at using this portal to manage extension attributes in a real Entra tenant.
+- **[Introducing Entra Extensions Manager: A Better Way to Manage Custom Extensions](https://www.chanceofsecurity.com/post/introducing-entra-extensions-manager)** - Announcement post going over the project, my rationale on why it exists, dreams and hopes on the project and walkthrough of the different features.
