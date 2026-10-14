@@ -17,7 +17,26 @@ Before opening or updating a pull request, run:
 npm run lint
 npm run test
 npm run build
+npm run test:e2e
 ```
+
+Install Chromium for the browser checks with `npx playwright install chromium`.
+The demo tests need no tenant credentials. Assignment acceptance checks cover
+single/bulk entry points, combined filters, and desktop/mobile walkthroughs.
+
+## Release Documentation
+
+The current target release is **v1.1.0**. Keep the package and lockfile root
+versions, changelog, README deployment examples, user guides, and tag-specific
+release notes consistent. The publication workflow selects
+`.github/release-notes/<tag>.md` and packages the guides and screenshots with
+the static app. Do not relabel historical release notes or dependency/API
+versions when changing the application version.
+
+When changing assignment or walkthrough behavior, update
+[docs/bulk-update.md](docs/bulk-update.md),
+[docs/assignment-wizard.md](docs/assignment-wizard.md), and affected screenshots.
+Capture screenshots from the demo without confirming writes.
 
 ## Pull request expectations
 

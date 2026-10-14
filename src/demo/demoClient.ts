@@ -94,7 +94,7 @@ function findObject(store: DemoStore, id: string): DemoObject | undefined {
 }
 
 function objectSummary(o: DemoObject): Json {
-  const out: Json = { id: o.id, displayName: o.displayName, ...o.values };
+  const out: Json = { id: o.id, displayName: o.displayName, ...o.properties, ...o.values };
   if (o.userPrincipalName) out.userPrincipalName = o.userPrincipalName;
   if (o.mail) out.mail = o.mail;
   if (o.mailNickname) out.mailNickname = o.mailNickname;
@@ -109,6 +109,13 @@ function objectSummary(o: DemoObject): Json {
 function routeGet(req: DemoRequestState): unknown {
   const store = getDemoStore();
   const path = stripQuery(req.path);
+
+  const membersMatch = path.match(/^\/(groups|directory\/administrativeUnits)\/([^/]+)\/members$/);
+  if (membersMatch) {
+    const parent = findObject(store, decodeURIComponent(membersMatch[2]));
+    if (!parent) throw new Error('Membership object not found.');
+    return { value: (parent.memberIds ?? []).map((id) => ({ id })) };
+  }
 
   // /{collection}/$count  -> number
   const countMatch = path.match(/^(.*)\/\$count$/);

@@ -21,12 +21,15 @@ Entra Extensions Manager is a managed, browser-based portal for discovering, rev
 
 The portal is designed for administrators and identity engineers who need a safer, clearer way to work with **schema extensions**, **directory extensions**, and **open extensions** without building one-off Graph scripts for every task.
 
+**Current version: v1.1.0.** This non-breaking minor release adds [Bulk Update](docs/bulk-update.md) for Schema Extensions and Directory Extensions in write mode (Edit mode), adjacent single/bulk assignment actions, combined built-in Entra and ExtensionAttribute1-15 filters, and an improved [Wizard walkthrough](docs/assignment-wizard.md). Apply values to selected objects or all matching objects across one or multiple supported declared directory target types. Existing definitions, directory single-object assignment, dry-runs, Open Extensions, and authentication remain compatible. See the [changelog](CHANGELOG.md) and [v1.1.0 release notes](.github/release-notes/v1.1.0.md).
+
 ## Table of contents
 
 - [What the portal does](#what-the-portal-does)
     - [Extension inventory](#extension-inventory)
     - [Schema extension management](#schema-extension-management)
     - [Directory extension management](#directory-extension-management)
+    - [Assignment and filtering](#assignment-and-filtering)
     - [Open extension management](#open-extension-management)
     - [Tools](#tools)
     - [Personalization and productivity](#personalization-and-productivity)
@@ -64,6 +67,7 @@ The portal is designed for administrators and identity engineers who need a safe
 - Edits schema extension details where Microsoft Graph allows edits.
 - Promotes schema extensions through their supported lifecycle states.
 - Deletes schema extensions where deletion is supported.
+- In Edit mode, bulk-updates schema property values on selected objects or all available objects across one or multiple supported declared directory target types.
 - Surfaces Microsoft Graph limitations and one-way lifecycle transitions before changes are made.
 
 ### Directory extension management
@@ -72,6 +76,16 @@ The portal is designed for administrators and identity engineers who need a safe
 - Creates new directory extension definitions for supported target object types.
 - Deletes directory extension definitions where Microsoft Graph allows deletion.
 - Identifies read-only or synced-from-on-premises extension definitions.
+- In Edit mode, bulk-updates a directory extension value on selected objects or all available objects across one or multiple declared directory target types, subject to Graph write restrictions.
+
+### Assignment and filtering
+
+- **Single or bulk, in the same area:** in Edit mode, the assignment arrow and **Bulk Assign/Update** button appear beside each Schema or Directory Extension. The existing directory single-object dialog and Bulk Update menu entry remain available.
+- **Built-in properties:** filter by Display Name, UPN, Mail, Department, Job Title, Company Name, Account Enabled, User Type, Group Type, membership rule, Security Enabled, Mail Enabled, direct group membership, administrative unit membership, Object Type, and Object ID, where applicable to the chosen object types.
+- **ExtensionAttribute1-15:** all 15 standard attributes can be filtered on users (`onPremisesExtensionAttributes`) and devices (`extensionAttributes`). These are distinct from custom directory/schema extension values.
+- **Combined conditions:** add multiple filters joined with AND, choose type-appropriate operators, and apply them before selecting targets. Text supports Equals, Not Equals, Contains, Starts With, Ends With, Is Empty, and Is Not Empty. Booleans use equality/inequality and empty checks; direct membership uses Equals/Not Equals with a group or unit GUID.
+- **Example:** `Department Equals Engineering AND ExtensionAttribute1 Equals West` targets a department/region intersection. `User Type Equals Member AND Account Enabled Equals true AND Mail Ends With @contoso.com` narrows active internal accounts. More examples and screenshots are in the [Bulk Update guide](docs/bulk-update.md).
+- **Safe targeting:** applied property conditions restrict both selected-object and all-objects operations; the quick search only filters visible rows. Confirmation refreshes the matching set and shows its count and conditions. Tables display 50 rows per page without capping the target set. Unsupported Graph operators are evaluated locally after paginated retrieval, so broad filters can still take time in large tenants.
 
 ### Open extension management
 
@@ -91,7 +105,7 @@ The portal is designed for administrators and identity engineers who need a safe
 
 - **Skins** — restyle the entire portal with one of five themes (Fluent, Retro, 8-bit, Synthwave, Newsprint), each with light and dark variants. Your choice is remembered.
 - **Command palette** — press <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>K</kbd> to jump to any page, switch skin/theme/mode, start a tour, or run demo actions.
-- **Guided tours** — a Help (`?`) button gives every page a fresh walkthrough that spotlights the relevant controls. It works in both the demo and a real tenant, and only auto-runs once when you enter the demo.
+- **Guided tours** — Help (`?`) starts with the introduction, navigation, and access mode, then covers the current page and remaining controls. Schema and Directory tours demonstrate single and bulk assignment consecutively. The bulk dialog also offers **Assignment walkthrough** for targeting, filtering, and confirmation. See the [Wizard guide](docs/assignment-wizard.md). Tours only explain actions and never perform writes.
 - **Keyboard shortcuts** — <kbd>/</kbd> focus search, <kbd>n</kbd> new, <kbd>e</kbd> toggle Edit mode, <kbd>?</kbd> About (which lists every shortcut).
 
 ### Demo mode
@@ -228,7 +242,7 @@ Self-hosting requires your own Microsoft Entra app registration.
 
 ### Download release package
 
-Each GitHub release includes a ZIP asset named like `entra-extensions-manager-v1.0.0.zip`.
+The v1.1.0 GitHub release package is `entra-extensions-manager-v1.1.0.zip`. It includes the built static app, runtime configuration template, README, changelog, release notes, user guides, and walkthrough screenshots.
 
 To self-host from a release package:
 
@@ -239,6 +253,8 @@ To self-host from a release package:
 5. Register the final hosted URL as a SPA redirect URI in your Entra app registration.
 
 > **Important:** you must edit `config.js`. If the `aadClientId` placeholder is left unchanged, a release build has no build-time fallback and sign-in fails with `AADSTS900144: The request body must contain the following parameter: 'client_id'`.
+
+**Upgrading from v1.0.0:** back up your configured `config.js`, replace the deployed static files with the v1.1.0 package, and restore your runtime configuration before serving the site. Existing app registrations, redirect URIs, delegated permissions, and extension data remain compatible. No migration or additional consent is required for the standard supported operations. Hidden membership queries may require permissions the app does not request. Source deployments can rebuild v1.1.0 with their existing configuration using `npm ci` and `npm run build`.
 
 ### Runtime configuration
 
@@ -298,6 +314,7 @@ The release package assumes the portal is hosted at the root of an HTTPS origin,
 - The Usage monitor object drill-down lists objects with the same advanced-query support (`$filter ... ne null` with `$count` and `ConsistencyLevel: eventual`) and pages results on demand; target types that do not support it are not offered.
 - Open extensions are stored per object and are not enumerable tenant-wide — there is no Graph endpoint that lists every open extension in a tenant — so the portal works with them one object at a time rather than as a global inventory.
 - Directory object search uses Microsoft Graph `$search` with `ConsistencyLevel: eventual`, is debounced, and requires at least two characters to limit request volume.
+- Bulk Update discovers all objects matching applied property filters in the chosen supported directory collections, including objects without an existing extension value. The quick display search does not restrict an all-objects update. Mailbox-bound schema targets (Contact, Event, Message, Post) are explicitly flagged and excluded because they require additional permissions and resource context. Writes are not transactional; per-object failures are reported without rolling back successful writes. See [Bulk Update](docs/bulk-update.md).
 
 ## Support-safe diagnostics
 

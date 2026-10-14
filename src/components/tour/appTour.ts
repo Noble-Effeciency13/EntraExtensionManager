@@ -3,24 +3,27 @@ import type { TourStep } from './TourProvider';
 /**
  * The default "chrome" walkthrough — explains the shell controls that are
  * present on every page. Used as the base tour everywhere (live and demo) and
- * appended after any page-specific steps. Phrasing is neutral so it reads
+ * organized around page-specific steps. Phrasing is neutral so it reads
  * correctly in both a real tenant and the demo.
  */
 export const appChromeTour: TourStep[] = [
   {
     title: 'Quick tour',
-    body: "Here's a 30-second tour of the portal. You can leave anytime with Skip (or Esc), and replay it from the Help (?) button in the top bar.",
+    body: 'Start with navigation and access mode, explore the current page, then finish with tenant and personal settings. Leave anytime with Skip or Esc, and replay from Help (?) in the top bar. The walkthrough explains actions without performing writes.',
     target: null,
+    beforePage: true,
   },
   {
     title: 'Browse & manage extensions',
     body: 'Use the navigation to work with Schema, Directory and Open extensions. The Tools section adds an audit log, usage monitor, value validator and manifest snippet generator.',
     target: 'nav',
+    beforePage: true,
   },
   {
     title: 'Read & Edit modes',
     body: "You start read-only. Switch to Edit to create, assign, update and delete. In a real tenant Entra asks for extra consent the first time; in the demo it's instant.",
     target: 'mode',
+    beforePage: true,
   },
   {
     title: 'Switch tenants',
@@ -43,3 +46,11 @@ export const appChromeTour: TourStep[] = [
     target: 'account',
   },
 ];
+
+export function buildContextualTour(chromeSteps: TourStep[], pageSteps: TourStep[]): TourStep[] {
+  return [
+    ...chromeSteps.filter((step) => step.beforePage),
+    ...pageSteps,
+    ...chromeSteps.filter((step) => !step.beforePage),
+  ];
+}

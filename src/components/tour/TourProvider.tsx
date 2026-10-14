@@ -19,12 +19,14 @@ import {
 } from '@fluentui/react-components';
 import { Dismiss20Regular } from '@fluentui/react-icons';
 import { t } from '@/i18n';
+import { buildContextualTour } from './appTour';
 
 export interface TourStep {
   title: string;
   body: string;
   /** `data-tour` value of the element to spotlight, or null for a centered step. */
   target: string | null;
+  beforePage?: boolean;
 }
 
 interface TourContextValue {
@@ -33,7 +35,7 @@ interface TourContextValue {
   start: (steps: TourStep[]) => void;
   /** Register (or clear) the current page's steps. Call from a page effect. */
   setPageSteps: (steps: TourStep[] | null) => void;
-  /** Start the contextual tour: this page's steps (if any) then the chrome tour. */
+  /** Start with shared orientation, followed by page tasks and remaining controls. */
   startPageTour: () => void;
 }
 
@@ -152,7 +154,7 @@ function place(
 /**
  * Provides a reusable guided-tour engine: a dimmed overlay that spotlights one
  * element at a time with an explanatory callout. Any descendant can start the
- * contextual tour (page steps + chrome steps) or register page-specific steps.
+ * contextual tour or register page-specific steps.
  *
  * Accessibility: the callout is a focus-trapped dialog with an aria-live region
  * announcing each step; focus is restored to the trigger when the tour closes.
@@ -192,7 +194,7 @@ export function TourProvider({
   }, []);
 
   const startPageTour = useCallback(() => {
-    start([...(pageStepsRef.current ?? []), ...chromeSteps]);
+    start(buildContextualTour(chromeSteps, pageStepsRef.current ?? []));
   }, [start, chromeSteps]);
 
   const measure = useCallback(() => {
@@ -321,6 +323,7 @@ export function TourProvider({
           {!layout.centered && layout.rect && (
             <div
               className={styles.spotlight}
+              data-testid="tour-spotlight"
               style={{
                 top: layout.rect.top - SPOTLIGHT_PAD,
                 left: layout.rect.left - SPOTLIGHT_PAD,

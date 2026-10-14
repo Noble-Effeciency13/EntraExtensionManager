@@ -25,12 +25,14 @@ import {
   TableColumnDefinition,
   TableColumnSizingOptions,
   Title2,
+  Tooltip,
   createTableColumn,
   makeStyles,
   tokens,
 } from '@fluentui/react-components';
 import {
   Add24Regular,
+  ArrowCircleRight24Regular,
   ArrowDownload24Regular,
   ArrowSync24Regular,
   ArrowUpload24Regular,
@@ -64,6 +66,7 @@ import { UsageDialog } from '@/components/UsageDialog';
 import { AuditLogDialog } from '@/components/AuditLogDialog';
 import { ManifestSnippetDialog } from '@/components/ManifestSnippetDialog';
 import { ValidateValueDialog } from '@/components/ValidateValueDialog';
+import { BulkUpdateDialog } from '@/components/BulkUpdateDialog';
 import { ImportDialog } from '@/components/ImportDialog';
 import { useAppToast } from '@/hooks/useAppToast';
 import { useMode } from '@/auth/mode';
@@ -186,6 +189,8 @@ export function SchemaExtensionsPage() {
   const [auditOf, setAuditOf] = useState<SchemaExtension | null>(null);
   const [manifestOf, setManifestOf] = useState<SchemaExtension | null>(null);
   const [validateOf, setValidateOf] = useState<SchemaExtension | null>(null);
+  const [bulkUpdateOf, setBulkUpdateOf] = useState<SchemaExtension | null>(null);
+  const [singleAssignOf, setSingleAssignOf] = useState<SchemaExtension | null>(null);
   const [importOpen, setImportOpen] = useState(false);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [bulkRunning, setBulkRunning] = useState(false);
@@ -210,6 +215,8 @@ export function SchemaExtensionsPage() {
       body: 'Narrow the list by lifecycle status or owner appId, and search the rows already loaded.',
       target: 'schema-filters',
     },
+    { title: 'Assign a value to a single object', body: 'In Edit mode, choose the Assign Value to an Object arrow beside a schema. Select one object and enter a JSON object using the declared schema properties, then review and confirm the persisted write.', target: 'schema-assign-single' },
+    { title: 'Bulk assign or update values', body: 'The adjacent Bulk Assign/Update button targets multiple selected objects or all matching objects across declared directory target types. Combine built-in property and ExtensionAttribute1-15 filters, apply them, inspect the matching count, then review and confirm.', target: 'schema-assign-bulk' },
   ]);
 
   const rows = useMemo(() => {
@@ -346,6 +353,17 @@ export function SchemaExtensionsPage() {
         columnId: 'actions',
         renderHeaderCell: () => '',
         renderCell: (item) => (
+          <div style={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+          {isEdit && <>
+            <Tooltip content="Assign Value to an Object" relationship="label">
+              <Button appearance="subtle" size="small" icon={<ArrowCircleRight24Regular />}
+                data-tour="schema-assign-single"
+                aria-label={`Assign value for ${item.id}`} onClick={() => setSingleAssignOf(item)} />
+            </Tooltip>
+            <Button appearance="subtle" size="small" icon={<Edit24Regular />}
+              data-tour="schema-assign-bulk"
+              aria-label={`Bulk Assign/Update for ${item.id}`} onClick={() => setBulkUpdateOf(item)}>Bulk Assign/Update</Button>
+          </>}
           <Menu>
             <MenuTrigger disableButtonEnhancement>
               <Button
@@ -390,6 +408,11 @@ export function SchemaExtensionsPage() {
                 )}
                 {isEdit && <MenuDivider />}
                 {isEdit && (
+                  <MenuItem icon={<Edit24Regular />} onClick={() => setBulkUpdateOf(item)}>
+                    Bulk Update
+                  </MenuItem>
+                )}
+                {isEdit && (
                   <MenuItem
                     icon={<Edit24Regular />}
                     onClick={() => {
@@ -422,6 +445,7 @@ export function SchemaExtensionsPage() {
               </MenuList>
             </MenuPopover>
           </Menu>
+          </div>
         ),
       }),
     ],
@@ -443,9 +467,9 @@ export function SchemaExtensionsPage() {
       ownerTenantId: { defaultWidth: 280, minWidth: 140 },
       propertiesCount: { defaultWidth: 120, minWidth: 80 },
       propertiesNames: { defaultWidth: 320, minWidth: 160 },
-      actions: { defaultWidth: 56, minWidth: 56, idealWidth: 56 },
+      actions: { defaultWidth: isEdit ? 270 : 56, minWidth: isEdit ? 270 : 56, idealWidth: isEdit ? 270 : 56 },
     }),
-    [],
+    [isEdit],
   );
 
   return (
@@ -773,6 +797,14 @@ export function SchemaExtensionsPage() {
           ext={manifestOf}
           onOpenChange={(o) => !o && setManifestOf(null)}
         />
+      )}
+
+      {bulkUpdateOf && (
+        <BulkUpdateDialog extension={{ variant: 'schema', ext: bulkUpdateOf }} onClose={() => setBulkUpdateOf(null)} />
+      )}
+
+      {singleAssignOf && (
+        <BulkUpdateDialog assignmentMode="single" extension={{ variant: 'schema', ext: singleAssignOf }} onClose={() => setSingleAssignOf(null)} />
       )}
 
       {validateOf && (

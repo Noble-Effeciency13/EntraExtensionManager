@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest';
+import type { Client } from '@microsoft/microsoft-graph-client';
 import { createDemoGraphClient } from './demoClient';
 import { resetDemoStore } from './demoData';
+import { listBulkObjects } from '@/api/bulkUpdate';
 
 // The fake client is structurally typed; cast results to read fields in tests.
 function client() {
@@ -15,6 +17,16 @@ function client() {
 
 describe('demo graph client', () => {
   beforeEach(() => resetDemoStore());
+
+  it('demonstrates built-in, extension attribute, and membership filters together', async () => {
+    const result = await listBulkObjects(createDemoGraphClient() as unknown as Client, ['User', 'Group'], [
+      { property: 'department', operator: 'eq', value: 'Engineering' },
+      { property: 'extensionAttribute1', operator: 'eq', value: 'West' },
+      { property: 'groupMembership', operator: 'eq', value: '11111111-0000-4000-8000-000000000001' },
+      { property: 'administrativeUnitMembership', operator: 'eq', value: '22222222-0000-4000-8000-000000000001' },
+    ]);
+    expect(result.map((object) => object.displayName)).toEqual(['Adele Vance']);
+  });
 
   it('lists seeded schema extensions', async () => {
     const res = (await client().api('/schemaExtensions').get()) as {

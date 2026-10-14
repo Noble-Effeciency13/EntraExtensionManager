@@ -41,6 +41,7 @@ import {
   Code24Regular,
   DataPie24Regular,
   Delete24Regular,
+  Edit24Regular,
   ExtendedDock24Regular,
   History24Regular,
   Info24Regular,
@@ -66,11 +67,13 @@ import { AuditLogDialog } from '@/components/AuditLogDialog';
 import { ManifestSnippetDialog } from '@/components/ManifestSnippetDialog';
 import { ValidateValueDialog } from '@/components/ValidateValueDialog';
 import { AssignValueDialog } from '@/components/AssignValueDialog';
+import { BulkUpdateDialog } from '@/components/BulkUpdateDialog';
 import { ImportDialog } from '@/components/ImportDialog';
 import { DirectoryExtensionEditor } from './DirectoryExtensionEditor';
 import { useAppToast } from '@/hooks/useAppToast';
 import { useMode } from '@/auth/mode';
 import { usePageShortcut } from '@/hooks/useKeyboardShortcuts';
+import { usePageTour } from '@/components/tour/TourProvider';
 import {
   downloadCsv,
   downloadJson,
@@ -154,11 +157,18 @@ export function DirectoryExtensionsPage() {
   const [manifestOf, setManifestOf] = useState<DirectoryExtensionProperty | null>(null);
   const [validateOf, setValidateOf] = useState<DirectoryExtensionProperty | null>(null);
   const [assignOf, setAssignOf] = useState<DirectoryExtensionProperty | null>(null);
+  const [bulkUpdateOf, setBulkUpdateOf] = useState<DirectoryExtensionProperty | null>(null);
 
   usePageShortcut('eem:new', () => {
     if (isEdit) setAdding({});
   });
   usePageShortcut('eem:focus-search', () => searchInputRef.current?.focus());
+
+  usePageTour([
+    { title: 'Directory extensions', body: 'Browse extension definitions by owning application. Switch to Edit mode to assign values.', target: 'directory-actions' },
+    { title: 'Assign a value to a single object', body: 'In Edit mode, choose the Assign Value to an Object arrow beside an extension. Search for a user, group, or other declared target, enter a typed value, and choose Assign. This persists the value without dry-run cleanup.', target: 'directory-assign-single' },
+    { title: 'Bulk assign or update values', body: 'Choose the adjacent Bulk Assign/Update button. Check objects across one or more target types, or choose All available objects. Add built-in property and ExtensionAttribute1-15 filters, apply them, then review the matching count and confirm. Each write has its own result.', target: 'directory-assign-bulk' },
+  ]);
 
   const filtered = useMemo(() => {
     if (!data) return [];
@@ -213,7 +223,7 @@ export function DirectoryExtensionsPage() {
 
   return (
     <>
-      <div className={styles.header}>
+      <div className={styles.header} data-tour="directory-actions">
         <div className={styles.titleRow}>
           <Title2>Directory extensions</Title2>
           <Tooltip
@@ -367,6 +377,7 @@ export function DirectoryExtensionsPage() {
                     onManifest={(ext) => setManifestOf(ext)}
                     onValidate={(ext) => setValidateOf(ext)}
                     onAssign={(ext) => setAssignOf(ext)}
+                    onBulkUpdate={(ext) => setBulkUpdateOf(ext)}
                   />
                 </AccordionPanel>
               </AccordionItem>
@@ -436,6 +447,10 @@ export function DirectoryExtensionsPage() {
         />
       )}
 
+      {bulkUpdateOf && (
+        <BulkUpdateDialog extension={{ variant: 'directory', ext: bulkUpdateOf }} onClose={() => setBulkUpdateOf(null)} />
+      )}
+
       {assignOf && (
         <AssignValueDialog
           open={!!assignOf}
@@ -466,6 +481,7 @@ interface SectionProps {
   onManifest: (ext: DirectoryExtensionProperty) => void;
   onValidate: (ext: DirectoryExtensionProperty) => void;
   onAssign: (ext: DirectoryExtensionProperty) => void;
+  onBulkUpdate: (ext: DirectoryExtensionProperty) => void;
 }
 
 function AppExtensionSection({
@@ -479,6 +495,7 @@ function AppExtensionSection({
   onManifest,
   onValidate,
   onAssign,
+  onBulkUpdate,
 }: SectionProps) {
   const styles = useStyles();
   const toast = useAppToast();
@@ -532,15 +549,23 @@ function AppExtensionSection({
         renderCell: (e) => (
           <div style={{ display: 'flex', gap: 2, alignItems: 'center' }}>
             {isEdit && (
-              <Tooltip content="Assign value to an object" relationship="label">
+              <Tooltip content="Assign Value to an Object" relationship="label">
                 <Button
                   appearance="subtle"
                   size="small"
                   icon={<ArrowCircleRight24Regular />}
                   aria-label={`Assign value for ${e.name}`}
+                  data-tour="directory-assign-single"
                   onClick={() => onAssign(e)}
                 />
               </Tooltip>
+            )}
+            {isEdit && (
+              <Button appearance="subtle" size="small" icon={<Edit24Regular />}
+                data-tour="directory-assign-bulk"
+                aria-label={`Bulk Assign/Update for ${e.name}`} onClick={() => onBulkUpdate(e)}>
+                Bulk Assign/Update
+              </Button>
             )}
             <Menu>
               <MenuTrigger disableButtonEnhancement>
@@ -580,6 +605,11 @@ function AppExtensionSection({
                 )}
                 {isEdit && <MenuDivider />}
                 {isEdit && (
+                  <MenuItem icon={<Edit24Regular />} onClick={() => onBulkUpdate(e)}>
+                    Bulk Update
+                  </MenuItem>
+                )}
+                {isEdit && (
                   <MenuItem
                     icon={<Delete24Regular />}
                     disabled={e.isSyncedFromOnPremises}
@@ -595,7 +625,7 @@ function AppExtensionSection({
         ),
       }),
     ],
-    [isEdit, onAudit, onAssign, onDelete, onManifest, onUsage, onValidate],
+    [isEdit, onAudit, onAssign, onBulkUpdate, onDelete, onManifest, onUsage, onValidate],
   );
 
   const columnSizingOptions = useMemo<TableColumnSizingOptions>(
@@ -604,7 +634,7 @@ function AppExtensionSection({
       dataType: { defaultWidth: 120, minWidth: 90 },
       targetObjects: { defaultWidth: 220, minWidth: 120 },
       source: { defaultWidth: 160, minWidth: 120 },
-      actions: { defaultWidth: isEdit ? 88 : 56, minWidth: isEdit ? 88 : 56, idealWidth: isEdit ? 88 : 56 },
+      actions: { defaultWidth: isEdit ? 270 : 56, minWidth: isEdit ? 270 : 56, idealWidth: isEdit ? 270 : 56 },
     }),
     [isEdit],
   );

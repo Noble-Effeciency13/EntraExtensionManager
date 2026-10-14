@@ -119,6 +119,24 @@ export function AboutDialog({ open, onOpenChange }: AboutDialogProps) {
                   Typed forms (Zod) and destructive-action guards on delete and
                   status transitions.
                 </li>
+                <li>
+                  In Edit mode, adjacent single-object assignment and Bulk
+                  Assign/Update actions write Schema or Directory Extension
+                  values to selected objects or all matching objects. Confirmation,
+                  progress, and per-object results keep bulk writes explicit.
+                </li>
+                <li>
+                  Combine built-in Entra property and ExtensionAttribute1-15
+                  filters with AND, where applicable. Applied property filters
+                  narrow write targets; quick search only changes visible rows.
+                  Membership filters use direct group or administrative unit
+                  membership by object ID.
+                </li>
+                <li>
+                  Help starts with orientation before page tasks. Assignment
+                  walkthroughs demonstrate single and bulk scenarios without
+                  performing writes.
+                </li>
               </ul>
             </div>
 

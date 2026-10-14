@@ -4,6 +4,30 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project follows semantic versioning where practical.
 
+## [1.1.0] - 2026-10-14
+
+### Added
+
+- **Bulk Update** support for Schema Extensions and Directory Extensions in write mode (Edit mode): apply typed values to one or multiple selected objects, or all objects matching applied conditions across one or multiple declared directory target types. Discovery follows every Graph page without a target cap.
+- Value validation, refreshed confirmation with target count and applied conditions, progress, and per-object success/failure results. Successful writes persist; failures do not roll back previous writes.
+- Adjacent **Assign Value to an Object** and **Bulk Assign/Update** actions for schema and directory extensions in Edit mode. Existing directory assignment and bulk menu entry points remain available.
+- Single-object schema value assignment, with exactly one selected object and confirmation before writing.
+- Combined AND filters for built-in Entra properties, direct group and administrative unit membership, and ExtensionAttribute1-15 on users and devices. Typed operators include Equals, Not Equals, Contains, Starts With, Ends With, Is Empty, and Is Not Empty where applicable.
+- Explicit Apply/Clear controls, Graph-side narrowing for supported conditions, page-by-page evaluation for other conditions, cancellable discovery, and 50-row object/result tables for large target sets.
+- Assignment-specific walkthrough and updated [Wizard guide](docs/assignment-wizard.md), screenshots, and reproducible demo examples.
+- Updated About help, consistent single-assignment tooltips, and packaged user guides, walkthrough screenshots, changelog, and release notes for self-hosted deployments.
+
+### Fixed
+
+- Single-object and bulk assignment tour steps now highlight their respective buttons individually on both extension pages, rather than sharing the entire action group.
+- Contextual walkthroughs now begin with the introduction, navigation, and access mode before page-specific tasks. The Directory Extensions tour no longer introduces itself at step 4 of 10; single and bulk assignment steps remain consecutive.
+
+### Compatibility
+
+- Applied property filters narrow the write target set, including all-objects operations. The existing quick object search remains display-only. Changing applied conditions clears object selections and requires a fresh confirmation.
+- Existing definitions, single directory assignment, dry-runs, Open Extensions, authentication, and permission scopes remain unchanged. Membership reads are subject to Graph authorization; hidden memberships may require permissions the app does not request.
+- Non-breaking minor release from v1.0.0. No data migration, runtime configuration changes, or additional permission scopes are required. Mailbox-bound schema targets (Contact, Event, Message, Post) remain explicitly flagged and excluded. Unrelated application functionality is unchanged. See the [Bulk Update guide](docs/bulk-update.md) for scope, operators, and performance considerations.
+
 ## [1.0.0] - 2026-06-22
 
 ### Added

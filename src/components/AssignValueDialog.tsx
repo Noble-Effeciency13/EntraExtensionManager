@@ -295,7 +295,7 @@ export function AssignValueDialog({ open, onOpenChange, ext }: Props) {
                 <div className={styles.readBack}>{readBack}</div>
                 <MessageBar intent="success">
                   <MessageBarBody>
-                    Value assigned and confirmed on the object.{' '}
+                    Value assigned. Read-back confirmation is best-effort.{' '}
                     <Badge appearance="tint" color="warning">
                       Remember to clear it if this was a test.
                     </Badge>

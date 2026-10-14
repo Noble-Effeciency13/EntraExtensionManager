@@ -98,6 +98,31 @@ export function ExtensionInfoDialog({ open, variant, onOpenChange }: Props) {
                 </Body1>
               </>
             )}
+            <Subtitle2>Assign values</Subtitle2>
+            <Body1>
+              In Edit mode, use the assignment arrow for one object or the
+              adjacent <strong>Bulk Assign/Update</strong> button for selected
+              objects or all matching objects across declared directory target
+              types. Schema values use a JSON property object; directory values
+              use the declared data type. The Bulk Update menu entry opens the
+              same bulk dialog.
+            </Body1>
+            <Subtitle2>Filter and review targets</Subtitle2>
+            <Body1>
+              Combine built-in Entra properties and ExtensionAttribute1-15
+              conditions with AND, where applicable. Standard attributes are
+              available on users and devices. Apply filters before selecting
+              objects; quick search only changes visible rows. Review the
+              refreshed count and values, then confirm. Membership conditions
+              use direct group or administrative unit membership by GUID.
+            </Body1>
+            <Body1>
+              Bulk writes persist and are not transactional. Per-object failures
+              do not undo successful writes. Graph still enforces permissions,
+              roles, lifecycle, and managed-value restrictions. Mailbox-bound
+              schema targets are excluded from this directory-scoped assignment
+              workflow.
+            </Body1>
             <Caption1>
               Reference:{' '}
               <Link

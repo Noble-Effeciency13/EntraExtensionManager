@@ -1,6 +1,13 @@
 # Planning: Usage Monitor — Object & Value Drill‑down
 
-**Status:** Investigation / planning (no code yet)
+**Status:** Archived design investigation (historical, not current usage documentation)
+
+The usage object/value drill-down is implemented. The remaining sections retain
+the original proposal and describe the state at the time of investigation, not
+the v1.1.0 implementation. For current functionality, see the
+[README](../README.md#tools). For writing values, see the
+[Bulk Update guide](bulk-update.md) and [assignment walkthrough](assignment-wizard.md).
+
 **Author:** _draft for review_
 **Related code:** [src/features/tools/UsagePage.tsx](../src/features/tools/UsagePage.tsx), [src/components/UsageDialog.tsx](../src/components/UsageDialog.tsx), [src/api/usage.ts](../src/api/usage.ts), [src/graph/client.ts](../src/graph/client.ts), [src/auth/msalConfig.ts](../src/auth/msalConfig.ts)
 

@@ -43,6 +43,8 @@ export interface DemoObject {
   mailNickname?: string;
   deviceId?: string;
   appId?: string;
+  properties?: Record<string, unknown>;
+  memberIds?: string[];
   /**
    * Extension values carried by this object, keyed by schema-extension id
    * (value is an object of property values) or by the fully-qualified
@@ -463,6 +465,32 @@ function seed(): DemoStore {
       ],
     },
   ];
+
+  users.forEach((user, index) => {
+    user.properties = {
+      department: index < 2 ? 'Engineering' : 'Sales',
+      jobTitle: index < 2 ? 'Software Engineer' : 'Account Manager',
+      companyName: 'Contoso', accountEnabled: index !== 4,
+      userType: index === 4 ? 'Guest' : 'Member',
+      onPremisesExtensionAttributes: Object.fromEntries(Array.from({ length: 15 }, (_, attributeIndex) => [
+        `extensionAttribute${attributeIndex + 1}`, attributeIndex === 0 ? index === 0 ? 'West' : 'East' : attributeIndex === 14 ? 'Pilot' : null,
+      ])),
+    };
+  });
+  groups.forEach((group, index) => {
+    group.properties = { groupTypes: index === 0 ? ['Unified', 'DynamicMembership'] : ['Unified'], securityEnabled: false, mailEnabled: true,
+      membershipRule: index === 0 ? '(user.department -eq "Engineering")' : null };
+  });
+  devices.forEach((device, index) => {
+    device.properties = { accountEnabled: true, extensionAttributes: Object.fromEntries(Array.from({ length: 15 }, (_, attributeIndex) => [
+      `extensionAttribute${attributeIndex + 1}`, attributeIndex === 0 ? index === 0 ? 'West' : 'East' : null,
+    ])) };
+  });
+  groups.push({ id: '11111111-0000-4000-8000-000000000001', displayName: 'Assignment Filter Example Group',
+    properties: { groupTypes: [], securityEnabled: true, mailEnabled: false },
+    memberIds: ['user-adele', 'user-alex', 'device-laptop-001'], values: {}, extensions: [] });
+  administrativeUnits.push({ id: '22222222-0000-4000-8000-000000000001', displayName: 'Assignment Filter Example Unit',
+    memberIds: ['user-adele', 'device-laptop-001'], values: {}, extensions: [] });
 
   const audit: DemoAuditEntry[] = [
     auditEntry(0, 'Add schema extension definition', 'extlearn01_courses', 'SchemaExtension', {

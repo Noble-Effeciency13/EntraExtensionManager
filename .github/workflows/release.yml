@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: Tag to publish, for example v1.0.0
+        description: Tag to publish, for example v1.1.0
         required: true
         type: string
 
@@ -46,6 +46,12 @@ jobs:
           cp -R dist/. "${package_dir}/"
           cp public/config.js "${package_dir}/config.js"
           cp README.md "${package_dir}/README.md"
+          cp CHANGELOG.md "${package_dir}/CHANGELOG.md"
+          mkdir -p "${package_dir}/docs"
+          cp docs/bulk-update.md docs/assignment-wizard.md "${package_dir}/docs/"
+          cp -R docs/images "${package_dir}/docs/images"
+          mkdir -p "${package_dir}/.github/release-notes"
+          cp -R .github/release-notes/. "${package_dir}/.github/release-notes/"
           cp LICENSE "${package_dir}/LICENSE"
           cp staticwebapp.config.json "${package_dir}/staticwebapp.config.json"
           cp .env.example "${package_dir}/.env.example"
@@ -68,9 +74,13 @@ jobs:
           RELEASE_TAG: ${{ github.event.inputs.tag || github.ref_name }}
         run: |
           asset="entra-extensions-manager-${RELEASE_TAG}.zip"
+          release_title="${RELEASE_TAG}"
+          if [ "${RELEASE_TAG}" = "v1.1.0" ]; then
+            release_title="v1.1.0 - Bulk Assignment, Advanced Filtering and Improved Walkthroughs"
+          fi
           if gh release view "${RELEASE_TAG}" >/dev/null 2>&1; then
             gh release upload "${RELEASE_TAG}" "${asset}" --clobber
-            gh release edit "${RELEASE_TAG}" --title "${RELEASE_TAG}" --notes-file release-notes.md
+            gh release edit "${RELEASE_TAG}" --title "${release_title}" --notes-file release-notes.md
           else
-            gh release create "${RELEASE_TAG}" "${asset}" --title "${RELEASE_TAG}" --notes-file release-notes.md --target "${GITHUB_SHA}"
+            gh release create "${RELEASE_TAG}" "${asset}" --title "${release_title}" --notes-file release-notes.md --target "${GITHUB_SHA}"
           fi
