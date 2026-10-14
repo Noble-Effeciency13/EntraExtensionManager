@@ -148,15 +148,17 @@ export function SchemaExtensionsPage() {
   const [statusFilter, setStatusFilter] = useState<SchemaExtensionStatus | 'All'>(
     'InDevelopment',
   );
-  const [ownerFilter, setOwnerFilter] = useState('');
   const [search, setSearch] = useState('');
+  const ownerAppId = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(search.trim())
+    ? search.trim()
+    : undefined;
 
   const queryFilter: SchemaExtensionsFilter = useMemo(
     () => ({
       status: statusFilter === 'All' ? undefined : statusFilter,
-      ownerAppId: ownerFilter.trim() || undefined,
+      ownerAppId,
     }),
-    [statusFilter, ownerFilter],
+    [statusFilter, ownerAppId],
   );
 
   const {
@@ -212,7 +214,7 @@ export function SchemaExtensionsPage() {
     },
     {
       title: 'Filter & search',
-      body: 'Narrow the list by lifecycle status or owner appId, and search the rows already loaded.',
+      body: 'Use one search bar for extension IDs, names/descriptions, target types, and owner app IDs. A complete owner app GUID filters Graph results; other text searches loaded rows. The status filter works alongside the search.',
       target: 'schema-filters',
     },
     { title: 'Assign a value to a single object', body: 'In Edit mode, choose the Assign Value to an Object arrow beside a schema. Select one object and enter a JSON object using the declared schema properties, then review and confirm the persisted write.', target: 'schema-assign-single' },
@@ -222,11 +224,12 @@ export function SchemaExtensionsPage() {
   const rows = useMemo(() => {
     const list = data?.pages.flatMap((p) => p.items) ?? [];
     if (!search.trim()) return list;
-    const q = search.toLowerCase();
+    const q = search.trim().toLowerCase();
     return list.filter(
       (e) =>
         e.id.toLowerCase().includes(q) ||
         (e.description ?? '').toLowerCase().includes(q) ||
+        e.owner.toLowerCase().includes(q) ||
         e.targetTypes.some((t) => t.toLowerCase().includes(q)),
     );
   }, [data, search]);
@@ -579,11 +582,12 @@ export function SchemaExtensionsPage() {
       <div className={styles.filters} data-tour="schema-filters">
         <Input
           ref={searchInputRef as unknown as React.Ref<HTMLInputElement>}
-          placeholder="Search loaded rows (id, description, target type) — press / to focus"
+          aria-label="Search schema extensions"
+          placeholder="Search id, name/description, target type, or owner appId"
           contentBefore={<Search24Regular />}
           value={search}
           onChange={(_, d) => setSearch(d.value)}
-          style={{ minWidth: 360 }}
+          style={{ flex: '1 1 360px', minWidth: 0 }}
         />
         <Dropdown
           aria-label="Filter by status"
@@ -600,12 +604,6 @@ export function SchemaExtensionsPage() {
             </Option>
           ))}
         </Dropdown>
-        <Input
-          placeholder="Filter by owner appId (GUID)"
-          value={ownerFilter}
-          onChange={(_, d) => setOwnerFilter(d.value)}
-          style={{ minWidth: 320 }}
-        />
         {totalLoaded > 0 && (
           <Caption1 style={{ marginLeft: 'auto' }}>
             Loaded {totalLoaded} row{totalLoaded === 1 ? '' : 's'}

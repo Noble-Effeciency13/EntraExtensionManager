@@ -64,6 +64,7 @@ The portal is designed for administrators and identity engineers who need a safe
 ### Schema extension management
 
 - Creates schema extension definitions.
+- A single search bar matches extension IDs, names/descriptions, target types, and owner app IDs in loaded rows. Entering a complete owner app GUID filters the Graph query by owner; the lifecycle status filter remains independent.
 - Edits schema extension details where Microsoft Graph allows edits.
 - Promotes schema extensions through their supported lifecycle states.
 - Deletes schema extensions where deletion is supported.

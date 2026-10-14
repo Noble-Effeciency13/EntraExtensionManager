@@ -26,6 +26,30 @@ test('demo usage monitor populates from the simulated tenant', async ({ page }) 
   await expect(page.getByText('Resources with a value')).toBeVisible();
 });
 
+test('schema search combines extension text and owner app filtering in one bar', async ({ page }) => {
+  await enterDemo(page);
+  await page.getByRole('link', { name: 'Schema extensions', exact: true }).click();
+  await page.getByRole('combobox', { name: 'Filter by status' }).click();
+  await page.getByRole('option', { name: 'Available', exact: true }).click();
+  const search = page.getByRole('textbox', { name: 'Search schema extensions', exact: true });
+  await expect(page.getByPlaceholder('Filter by owner appId (GUID)')).toHaveCount(0);
+  await search.fill('  courses  ');
+  await expect(page.getByRole('button', { name: 'Actions for extlearn01_courses', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Actions for exthr03_employeeProfile', exact: true })).toHaveCount(0);
+  await search.fill('Training courses');
+  await expect(page.getByRole('button', { name: 'Actions for extlearn01_courses', exact: true })).toBeVisible();
+  await search.fill('Group');
+  await expect(page.getByRole('button', { name: 'Actions for extlearn01_courses', exact: true })).toBeVisible();
+  await search.fill('22222222');
+  await expect(page.getByRole('button', { name: 'Actions for extlearn01_courses', exact: true })).toBeVisible();
+  await search.fill('11111111-1111-1111-1111-111111111111');
+  await expect(page.getByRole('button', { name: 'Actions for exthr03_employeeProfile', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Actions for extlearn01_courses', exact: true })).toHaveCount(0);
+  await search.fill('');
+  await expect(page.getByRole('button', { name: 'Actions for extlearn01_courses', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Actions for exthr03_employeeProfile', exact: true })).toBeVisible();
+});
+
 test('command palette opens with Ctrl+K', async ({ page }) => {
   await enterDemo(page);
   await page.keyboard.press('Control+k');

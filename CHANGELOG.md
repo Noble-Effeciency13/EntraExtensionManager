@@ -19,6 +19,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Fixed
 
+- Combined schema extension text search and owner app filtering into one search bar. Partial text searches loaded IDs, names/descriptions, target types, and owners; a complete owner app GUID retains server-side filtering alongside the status filter.
 - Single-object and bulk assignment tour steps now highlight their respective buttons individually on both extension pages, rather than sharing the entire action group.
 - Contextual walkthroughs now begin with the introduction, navigation, and access mode before page-specific tasks. The Directory Extensions tour no longer introduces itself at step 4 of 10; single and bulk assignment steps remain consecutive.
 
